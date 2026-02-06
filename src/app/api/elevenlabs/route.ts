@@ -10,6 +10,51 @@ const supabase = createClient(
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
+// GET handler - Generate ElevenLabs signed URL
+export async function GET(request: Request) {
+  try {
+    const { searchParams } = new URL(request.url);
+    const userName = searchParams.get('name') || 'User';
+
+    // Get ElevenLabs agent ID and API key from environment
+    const agentId = process.env.AGENT_ID;
+    const apiKey = process.env.API_KEY;
+
+    if (!agentId || !apiKey) {
+      return NextResponse.json(
+        { error: 'ElevenLabs credentials not configured' },
+        { status: 500 }
+      );
+    }
+
+    // Generate signed URL from ElevenLabs
+    const response = await fetch(
+      `https://api.elevenlabs.io/v1/convai/conversation/get_signed_url?agent_id=${agentId}`,
+      {
+        method: 'GET',
+        headers: {
+          'xi-api-key': apiKey,
+        },
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error(`ElevenLabs API error: ${response.statusText}`);
+    }
+
+    const data = await response.json();
+
+    return NextResponse.json({ signedUrl: data.signed_url });
+  } catch (error) {
+    console.error('Error generating signed URL:', error);
+    return NextResponse.json(
+      { error: 'Failed to generate signed URL' },
+      { status: 500 }
+    );
+  }
+}
+
+// POST handler - Webhook for crisis detection
 export async function POST(request: Request) {
   try {
     const body = await request.json();

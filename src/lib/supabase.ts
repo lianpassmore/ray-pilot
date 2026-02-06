@@ -9,13 +9,21 @@ export function createClient() {
 }
 
 // Server-side Supabase client with service role (use with caution)
-export const supabaseAdmin = createSupabaseClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!,
-  {
-    auth: {
-      autoRefreshToken: false,
-      persistSession: false
-    }
+// Lazy-loaded to ensure environment variables are available
+let _supabaseAdmin: ReturnType<typeof createSupabaseClient> | null = null
+
+export function getSupabaseAdmin() {
+  if (!_supabaseAdmin) {
+    _supabaseAdmin = createSupabaseClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!,
+      {
+        auth: {
+          autoRefreshToken: false,
+          persistSession: false
+        }
+      }
+    )
   }
-)
+  return _supabaseAdmin
+}

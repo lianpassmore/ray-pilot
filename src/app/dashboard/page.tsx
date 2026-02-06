@@ -1,7 +1,7 @@
 'use client'
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase'
-import { Menu, X, Info, Phone, LogOut } from 'lucide-react'
+import { X, Info, Phone, LogOut } from 'lucide-react'
 import RayWidget from '@/components/RayWidget'
 import TimeMeter from '@/components/TimeMeter'
 import HeaderIcons from '@/components/HeaderIcons'
@@ -83,9 +83,6 @@ export default function Dashboard() {
         </div>
         <div className="flex items-center gap-2">
           <HeaderIcons
-            onHistoryClick={() => console.log('History')}
-            onMemoryClick={() => console.log('Memory')}
-            onPartnerClick={() => console.log('Partner')}
             onSettingsClick={() => setIsMenuOpen(true)}
           />
         </div>
@@ -131,7 +128,7 @@ export default function Dashboard() {
               </button>
             </div>
 
-            <div className="space-y-8 flex-1">
+            <div className="space-y-8 flex-1 overflow-y-auto">
               {/* Section 1: About */}
               <div className="space-y-4">
                 <div className="flex items-center gap-3 text-clay">
@@ -139,8 +136,13 @@ export default function Dashboard() {
                   <span className="font-bold uppercase text-sm tracking-widest">About Ray</span>
                 </div>
                 <p className="text-sm text-warm-grey leading-relaxed">
-                  Ray is an AI relationship coach built for this university pilot.
-                  Conversations are private. Ray helps you see patterns, but Ray is not a therapist.
+                  Ray is an AI relationship coach—like a thinking partner helping you see patterns in any relationship: romantic, family, friendships, work, or even the one you have with yourself.
+                </p>
+                <p className="text-sm text-warm-grey leading-relaxed">
+                  Your conversations are private. Each session starts fresh—Ray has no memory of previous sessions.
+                </p>
+                <p className="text-sm text-warm-grey leading-relaxed">
+                  Ray is coaching, not therapy. Ray can't treat mental health conditions or provide crisis intervention.
                 </p>
               </div>
 
@@ -174,7 +176,8 @@ export default function Dashboard() {
               <div className="pt-8 border-t border-charcoal/10">
                 <p className="text-xs text-warm-grey mb-2 uppercase tracking-wide">Researcher Contact</p>
                 <p className="text-sm text-charcoal font-medium">Lian Passmore</p>
-                <p className="text-sm text-warm-grey">lian@dreamstorm.org</p>
+                <p className="text-sm text-warm-grey">lianpassmore@gmail.com</p>
+                <p className="text-sm text-warm-grey">027 566 8803</p>
               </div>
             </div>
 

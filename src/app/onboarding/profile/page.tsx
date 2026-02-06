@@ -50,32 +50,44 @@ export default function ProfilePage() {
     if (!formData.displayName) return
     setLoading(true)
 
-    const finalGender = formData.gender === 'Other' ? formData.genderOther : formData.gender
+    try {
+      const finalGender = formData.gender === 'Other' ? formData.genderOther : formData.gender
 
-    const { data: { user } } = await supabase.auth.getUser()
-    
-    if (user) {
-      await supabase.from('profiles').upsert({
-        id: user.id,
-        display_name: formData.displayName,
-        age_range: formData.ageRange,
-        location: formData.location,
-        gender: finalGender,
-        ethnicity: formData.ethnicity,
-        identity_factors: formData.identityFactors,
-        last_login: new Date().toISOString()
-      })
-      
-      // Redirect to Dashboard
-      router.push('/dashboard')
+      const { data: { user } } = await supabase.auth.getUser()
+
+      if (user) {
+        const { error } = await supabase.from('profiles').upsert({
+          id: user.id,
+          display_name: formData.displayName,
+          age_range: formData.ageRange,
+          location: formData.location,
+          gender: finalGender,
+          ethnicity: formData.ethnicity,
+          identity_factors: formData.identityFactors,
+          last_login: new Date().toISOString()
+        })
+
+        if (error) {
+          console.error('Error saving profile:', error)
+          alert(`Failed to save profile: ${error.message}\n\nDetails: ${error.details || 'No additional details'}`)
+          setLoading(false)
+          return
+        }
+
+        // Redirect to Dashboard
+        router.push('/dashboard')
+      }
+    } catch (error) {
+      console.error('Error in handleSubmit:', error)
+      alert('An error occurred. Please try again.')
+      setLoading(false)
     }
-    setLoading(false)
   }
 
   return (
     <div className="min-h-screen p-6 max-w-md mx-auto py-12 bg-linen">
       <h1 className="text-2xl font-bold text-charcoal mb-2">A little more about you</h1>
-      <p className="text-warm-grey text-sm mb-8">This helps me see patterns across different groups rather than individual answers.</p>
+      <p className="text-warm-grey text-sm mb-8">These questions help me identify patterns across all participants for research purposes. Ray won't use this information in your conversations—each session starts fresh with no memory of you.</p>
 
       <div className="space-y-6">
 

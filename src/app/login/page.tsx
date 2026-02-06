@@ -5,99 +5,204 @@ import { useRouter } from 'next/navigation'
 
 export default function Login() {
   const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [token, setToken] = useState('')
+  const [useOtp, setUseOtp] = useState(true) // Default to OTP for new users
+  const [otpSent, setOtpSent] = useState(false)
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState<string | null>(null)
   const supabase = createClient()
+  const router = useRouter()
 
-  const handleLogin = async (e: React.FormEvent) => {
+  const handlePasswordLogin = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
-    
-    // We redirect to the callback route we just made
+    setMessage(null)
+
+    const { error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    })
+
+    if (error) {
+      setMessage('Invalid email or password.')
+      setLoading(false)
+    } else {
+      router.push('/dashboard')
+    }
+  }
+
+  const handleSendOtp = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setLoading(true)
+    setMessage(null)
+
     const { error } = await supabase.auth.signInWithOtp({
       email,
       options: {
-        emailRedirectTo: `${window.location.origin}/auth/callback`,
+        shouldCreateUser: true,
       },
     })
 
     if (error) {
       setMessage('Something went wrong. Try again.')
+      setLoading(false)
     } else {
-      setMessage('Check your email for the login link!')
+      setMessage('Check your email for your one-time code!')
+      setOtpSent(true)
+      setLoading(false)
     }
-    setLoading(false)
   }
 
-  const handleGoogleLogin = async () => {
-    await supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: {
-        redirectTo: `${window.location.origin}/auth/callback`,
-      },
+  const handleVerifyOtp = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setLoading(true)
+    setMessage(null)
+
+    const { data, error } = await supabase.auth.verifyOtp({
+      email,
+      token,
+      type: 'email',
     })
+
+    if (error) {
+      setMessage('Invalid code. Please try again.')
+      setLoading(false)
+    } else {
+      // Check if this is a new user (first sign-in)
+      const { data: { user } } = await supabase.auth.getUser()
+
+      // If user was created recently (within last 5 minutes), they're new
+      if (user?.created_at) {
+        const createdAt = new Date(user.created_at).getTime()
+        const now = Date.now()
+        const fiveMinutes = 5 * 60 * 1000
+
+        if (now - createdAt < fiveMinutes) {
+          // New user - redirect to password setup
+          router.push('/setup-password')
+          return
+        }
+      }
+
+      // Existing user - go to dashboard
+      router.push('/dashboard')
+    }
   }
+
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center p-6 text-center bg-linen">
       <div className="w-full max-w-sm space-y-8">
         <div>
           <h2 className="text-3xl font-bold text-charcoal">Nau mai.</h2>
-          <p className="mt-2 text-warm-grey">Sign in to connect with Ray.</p>
+          <p className="mt-2 text-warm-grey">
+            {useOtp ? 'Create account or sign in with Ray.' : 'Sign in to connect with Ray.'}
+          </p>
         </div>
 
-        {/* Google Button */}
-        <button
-          onClick={handleGoogleLogin}
-          className="btn-secondary w-full flex items-center justify-center gap-2"
-        >
-          <svg className="w-5 h-5" viewBox="0 0 24 24">
-            <path
-              fill="currentColor"
-              d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
-            />
-            <path
-              fill="currentColor"
-              d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
-            />
-            <path
-              fill="currentColor"
-              d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.84z"
-            />
-            <path
-              fill="currentColor"
-              d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
-            />
-          </svg>
-          Continue with Google
-        </button>
+        {!otpSent ? (
+          <>
+            {!useOtp ? (
+              // Password Login Form
+              <form className="space-y-6" onSubmit={handlePasswordLogin}>
+                <input
+                  type="email"
+                  placeholder="Email address"
+                  className="input-field"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                />
+                <input
+                  type="password"
+                  placeholder="Password"
+                  className="input-field"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                />
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className={loading ? "btn-disabled w-full" : "btn-primary w-full"}
+                >
+                  {loading ? 'Signing in...' : 'Sign In'}
+                </button>
+              </form>
+            ) : (
+              // OTP Login Form
+              <form className="space-y-6" onSubmit={handleSendOtp}>
+                <input
+                  type="email"
+                  placeholder="Email address"
+                  className="input-field"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                />
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className={loading ? "btn-disabled w-full" : "btn-primary w-full"}
+                >
+                  {loading ? 'Sending code...' : 'Continue with Email'}
+                </button>
+                <p className="text-xs text-warm-grey">
+                  New users will be prompted to create a password after verifying their email.
+                </p>
+              </form>
+            )}
 
-        <div className="relative">
-          <div className="absolute inset-0 flex items-center">
-            <div className="w-full border-t border-charcoal/20"></div>
-          </div>
-          <div className="relative flex justify-center text-sm">
-            <span className="px-2 bg-linen text-warm-grey">Or with email</span>
-          </div>
-        </div>
-
-        <form className="space-y-6" onSubmit={handleLogin}>
-          <input
-            type="email"
-            placeholder="Email address"
-            className="input-field"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-          />
-          <button
-            type="submit"
-            disabled={loading}
-            className={loading ? "btn-disabled w-full" : "btn-primary w-full"}
-          >
-            {loading ? 'Sending link...' : 'Send Magic Link'}
-          </button>
-        </form>
+            {/* Toggle between password and OTP */}
+            <button
+              type="button"
+              onClick={() => {
+                setUseOtp(!useOtp)
+                setMessage(null)
+              }}
+              className="text-sm text-warm-grey hover:text-charcoal underline"
+            >
+              {useOtp ? 'Already have a password? Sign in here' : 'New user or forgot password? Use email code'}
+            </button>
+          </>
+        ) : (
+          // OTP Verification Form
+          <form className="space-y-6" onSubmit={handleVerifyOtp}>
+            <div className="text-sm text-warm-grey mb-4">
+              Code sent to <span className="font-semibold text-charcoal">{email}</span>
+            </div>
+            <input
+              type="text"
+              placeholder="Enter your code"
+              className="input-field text-center text-2xl tracking-widest"
+              value={token}
+              onChange={(e) => setToken(e.target.value)}
+              required
+              autoComplete="one-time-code"
+              inputMode="numeric"
+              maxLength={8}
+            />
+            <button
+              type="submit"
+              disabled={loading}
+              className={loading ? "btn-disabled w-full" : "btn-primary w-full"}
+            >
+              {loading ? 'Verifying...' : 'Verify Code'}
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setOtpSent(false)
+                setToken('')
+                setMessage(null)
+              }}
+              className="text-sm text-warm-grey hover:text-charcoal underline"
+            >
+              Use a different email
+            </button>
+          </form>
+        )}
 
         {message && (
           <div className={`p-4 border rounded-[2px] text-sm ${
