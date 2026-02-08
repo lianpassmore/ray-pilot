@@ -13,81 +13,98 @@ export default function AnimatedRayCircle({
   size = 200,
   onClick,
 }: AnimatedRayCircleProps) {
-  
-  // BRAND COLORS MAPPED TO STATES
-  const getFillColor = () => {
-    switch (state) {
-      case "idle": return "rgba(255,255,255,0.4)"; // Soft white, transparent-ish
-      case "connected": return "#2C2C2C"; // Charcoal (Listening/Thinking)
-      case "speaking": return "#2C2C2C";  // Charcoal (Speaking)
-      default: return "rgba(255,255,255,0.4)";
-    }
-  };
 
-  const getBorderColor = () => {
-    if (state === "idle") return "rgba(255,255,255,0.6)"; // Soft white border
-    return "#2C2C2C"; // Charcoal when active
-  };
-
-  // The Inner Icon (...)
-  const getIconColor = () => {
-    if (state === "idle") return "#7A7A7A"; // Warm Grey
-    return "#F5F5DC"; // Linen (Inverse when filled)
-  };
-
-  // Pulse Animation (The "Breathing")
-  const pulseVariants: Variants = {
-    idle: { scale: 1, opacity: 0 },
+  const variants: Variants = {
+    idle: {
+      scale: 1,
+      opacity: 0.08,
+      backgroundColor: "#2C2C2C",
+      borderWidth: 0,
+      transition: { duration: 0.5 }
+    },
     connected: {
-      scale: [1, 1.2],
-      opacity: [0.1, 0],
-      transition: { duration: 2, repeat: Infinity, ease: "easeOut" },
+      scale: [1, 1.02, 1],
+      opacity: 0.8,
+      backgroundColor: "#2C2C2C",
+      borderWidth: 0,
+      transition: {
+        duration: 3,
+        repeat: Infinity,
+        repeatType: "mirror",
+        ease: "easeInOut"
+      },
     },
     speaking: {
-      scale: [1, 1.3],
-      opacity: [0.2, 0],
-      transition: { duration: 1, repeat: Infinity, ease: "easeOut" },
+      scale: [1, 1.1, 1],
+      opacity: 1,
+      backgroundColor: "#2C2C2C",
+      borderWidth: 0,
+      transition: {
+        duration: 2,
+        repeat: Infinity,
+        repeatType: "mirror",
+        ease: "easeInOut"
+      },
     },
+  };
+
+  const rippleVariants: Variants = {
+    idle: { opacity: 0 },
+    connected: { opacity: 0 },
+    speaking: {
+      scale: [1, 1.4],
+      opacity: [0.2, 0],
+      transition: {
+        duration: 2,
+        repeat: Infinity,
+        ease: "easeOut",
+      },
+    }
   };
 
   return (
     <div
-      className="relative flex items-center justify-center cursor-pointer"
+      className="relative flex items-center justify-center cursor-pointer group"
       style={{ width: size, height: size }}
       onClick={onClick}
     >
-      {/* Pulse Ring (Atmosphere) */}
+      {/* Hover Hint */}
+      <div className="absolute inset-0 rounded-full border border-charcoal/20 opacity-0 group-hover:opacity-100 transition-opacity duration-500 scale-110" />
+
+      {/* Ripple Effect */}
       <motion.div
-        className="absolute inset-0 rounded-full border border-charcoal"
-        variants={pulseVariants}
+        className="absolute inset-0 rounded-full bg-charcoal"
+        variants={rippleVariants}
         animate={state}
       />
 
-      {/* Main Circle (The Button) */}
+      {/* The Main Orb */}
       <motion.div
-        className="relative flex items-center justify-center rounded-full border-2 transition-colors duration-500"
+        className="relative rounded-full flex items-center justify-center"
         style={{
           width: size,
           height: size,
-          backgroundColor: getFillColor(),
-          borderColor: getBorderColor(),
         }}
-        // Subtle breathing even when idle
-        animate={state === 'speaking' ? { scale: [1, 1.05, 1] } : { scale: 1 }}
-        transition={{ duration: 0.5, repeat: state === 'speaking' ? Infinity : 0 }}
+        variants={variants}
+        animate={state}
+        initial="idle"
       >
-        {/* The "Ellipsis" Icon */}
-        <span
-          className="font-light tracking-widest transition-colors duration-300"
-          style={{
-            fontSize: Math.floor(size * 0.3),
-            lineHeight: 0,
-            paddingBottom: size * 0.1,
-            color: getIconColor(),
-          }}
-        >
-          ...
-        </span>
+        {/* Ellipsis — only visible when active */}
+        {state !== "idle" && (
+          <motion.span
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.4 }}
+            className="font-light tracking-[0.3em] text-linen"
+            style={{
+              fontSize: Math.floor(size * 0.25),
+              lineHeight: 0,
+              paddingBottom: size * 0.08,
+            }}
+          >
+            ...
+          </motion.span>
+        )}
       </motion.div>
     </div>
   );

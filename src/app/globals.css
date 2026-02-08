@@ -47,6 +47,10 @@ body {
     @apply bg-transparent text-charcoal border border-charcoal/30 w-full py-4 px-6 text-[15px] font-bold uppercase tracking-[1.5px] transition-all duration-200 hover:border-charcoal hover:bg-charcoal/5 active:scale-[0.98] flex items-center justify-center;
   }
 
+  .btn-clay {
+    @apply bg-clay text-linen px-6 py-3 rounded-sm font-bold uppercase tracking-widest transition-all duration-200 hover:bg-charcoal active:scale-[0.98] flex items-center gap-2;
+  }
+
   .btn-disabled {
     @apply bg-charcoal/10 text-charcoal/40 cursor-not-allowed hover:bg-charcoal/10 hover:text-charcoal/40 transform-none;
   }
