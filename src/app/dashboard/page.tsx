@@ -58,7 +58,7 @@ export default function Dashboard() {
         return
       }
       const distance = targetDate - now
-      const days = Math.floor(distance / (1000 * 60 * 60 * 24))
+      const days = Math.ceil(distance / (1000 * 60 * 60 * 24))
       setTimeLeft(`Starts in: ${days} days`)
       setProgress(0)
     }, 1000)
@@ -79,14 +79,7 @@ export default function Dashboard() {
 
       {/* --- HEADER --- */}
       <header className="absolute top-0 left-0 w-full px-8 py-6 flex justify-between items-center z-20">
-        <div className="flex items-center gap-3">
-          <h1 className="text-2xl font-black tracking-[0.25em] text-charcoal">RAY</h1>
-          {timeLeft && (
-            <span className="text-[9px] font-bold uppercase tracking-widest text-warm-grey/50">
-              {timeLeft}
-            </span>
-          )}
-        </div>
+        <h1 className="text-2xl font-black tracking-[0.25em] text-charcoal">RAY</h1>
         <HeaderIcons onSettingsClick={() => setIsMenuOpen(true)} />
       </header>
 
@@ -124,6 +117,11 @@ export default function Dashboard() {
 
       {/* --- FOOTER --- */}
       <div className="absolute bottom-6 w-full text-center pb-safe pointer-events-none">
+        {timeLeft && (
+          <p className="text-[10px] text-warm-grey uppercase tracking-widest font-bold opacity-40 mb-1">
+            {timeLeft}
+          </p>
+        )}
         <p className="text-[10px] text-warm-grey uppercase tracking-widest font-medium opacity-40">
           Each session starts fresh
         </p>
@@ -163,7 +161,7 @@ export default function Dashboard() {
                 <p className="text-sm text-charcoal/80 leading-relaxed">
                   A space for honest conversations about relationships. Not therapy. Not advice. Just a thinking partner.
                 </p>
-                <a href="https://ray-research-info.vercel.app/" target="_blank" className="text-xs font-bold underline text-clay">Read More</a>
+                <a href="https://ray-research-info.vercel.app/" target="_blank" rel="noopener noreferrer" className="text-xs font-bold underline text-clay">Read More</a>
               </div>
 
               <div className="space-y-4">
