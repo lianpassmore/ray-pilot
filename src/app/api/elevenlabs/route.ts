@@ -2,13 +2,12 @@ import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { Resend } from 'resend';
 import { ElevenLabsClient } from '@elevenlabs/elevenlabs-js';
+import { createServerClient } from '@/lib/supabase';
 
-// Initialize Admin Client (Bypasses RLS to log incidents)
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY! // You need to add this to .env.local
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
-
 const resend = new Resend(process.env.RESEND_API_KEY);
 
 // Simple device detection from User-Agent
@@ -28,12 +27,30 @@ function parseDevice(userAgent: string) {
   return { deviceType, browser };
 }
 
+// Helper: verify authenticated user and return their ID
+async function getAuthenticatedUser() {
+  const supabaseAuth = await createServerClient();
+  const { data: { user } } = await supabaseAuth.auth.getUser();
+  return user;
+}
+
 // GET handler - Generate ElevenLabs signed URL and create conversation record
 export async function GET(request: Request) {
   try {
+    // Verify authenticated user
+    const user = await getAuthenticatedUser();
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     const { searchParams } = new URL(request.url);
     const userName = searchParams.get('name') || 'User';
     const userId = searchParams.get('userId');
+
+    // Verify the authenticated user matches the userId param
+    if (userId && user.id !== userId) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
 
     // Get ElevenLabs agent ID and API key from environment
     const agentId = process.env.AGENT_ID;
@@ -141,10 +158,27 @@ export async function GET(request: Request) {
 // PATCH handler - Link ElevenLabs conversation_id to our DB row
 export async function PATCH(request: Request) {
   try {
+    // Verify authenticated user
+    const user = await getAuthenticatedUser();
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     const { conversationDbId, elevenLabsConversationId } = await request.json();
 
     if (!conversationDbId || !elevenLabsConversationId) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
+    }
+
+    // Verify the conversation belongs to the authenticated user
+    const { data: convo } = await supabase
+      .from('conversations')
+      .select('user_id')
+      .eq('id', conversationDbId)
+      .single();
+
+    if (!convo || convo.user_id !== user.id) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
     await supabase
@@ -162,6 +196,12 @@ export async function PATCH(request: Request) {
 // PUT handler - End session, record duration, increment total_sessions
 export async function PUT(request: Request) {
   try {
+    // Verify authenticated user
+    const user = await getAuthenticatedUser();
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     const { conversationDbId } = await request.json();
 
     if (!conversationDbId) {
@@ -176,6 +216,11 @@ export async function PUT(request: Request) {
 
     if (!convo) {
       return NextResponse.json({ error: 'Conversation not found' }, { status: 404 });
+    }
+
+    // Verify the conversation belongs to the authenticated user
+    if (convo.user_id !== user.id) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
     const endedAt = new Date();
@@ -216,7 +261,7 @@ export async function PUT(request: Request) {
   }
 }
 
-// POST handler - Webhook for crisis detection
+// POST handler - Webhook for crisis detection (no user auth — uses signature verification)
 export async function POST(request: Request) {
   try {
     // 0. Verify webhook signature
@@ -255,7 +300,7 @@ export async function POST(request: Request) {
 
     // Convert transcript to string for scanning
     const fullText = JSON.stringify(transcript).toLowerCase();
-    
+
     const detectedCrisis = crisisKeywords.find(keyword => fullText.includes(keyword));
 
     if (detectedCrisis) {

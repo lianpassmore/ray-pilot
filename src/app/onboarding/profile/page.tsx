@@ -156,6 +156,36 @@ export default function ProfilePage() {
               <option value="International">International</option>
             </select>
           </div>
+
+          <div>
+            <label className="label-sm mb-2 block">Gender</label>
+            <select
+              className="input-field appearance-none"
+              value={formData.gender}
+              onChange={e => setFormData({...formData, gender: e.target.value})}
+            >
+              <option value="">Select...</option>
+              <option value="Woman">Woman</option>
+              <option value="Man">Man</option>
+              <option value="Non-binary">Non-binary</option>
+              <option value="Gender diverse">Gender diverse</option>
+              <option value="Prefer not to say">Prefer not to say</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
+
+          {formData.gender === 'Other' && (
+            <div>
+              <label className="label-sm mb-2 block">Please specify</label>
+              <input
+                type="text"
+                className="input-field"
+                placeholder="Gender identity"
+                value={formData.genderOther}
+                onChange={e => setFormData({...formData, genderOther: e.target.value})}
+              />
+            </div>
+          )}
         </section>
 
         {/* SECTION 3: IDENTITY (Custom Checkboxes) */}
