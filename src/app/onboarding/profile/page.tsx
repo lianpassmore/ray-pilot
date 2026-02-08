@@ -11,6 +11,7 @@ export default function ProfilePage() {
   // Form State
   const [formData, setFormData] = useState({
     displayName: '',
+    phone: '',
     ageRange: '',
     location: '',
     gender: '',
@@ -19,7 +20,6 @@ export default function ProfilePage() {
     identityFactors: [] as string[]
   })
 
-  // Options
   const ethnicities = [
     'European / Pākehā', 'Māori', 'Indian', 'Chinese', 'Filipino', 
     'Samoan', 'Tongan', 'Cook Islands Māori', 'Niuean', 'Fijian', 
@@ -52,13 +52,13 @@ export default function ProfilePage() {
 
     try {
       const finalGender = formData.gender === 'Other' ? formData.genderOther : formData.gender
-
       const { data: { user } } = await supabase.auth.getUser()
 
       if (user) {
         const { error } = await supabase.from('profiles').upsert({
           id: user.id,
           display_name: formData.displayName,
+          phone: formData.phone,
           age_range: formData.ageRange,
           location: formData.location,
           gender: finalGender,
@@ -68,126 +68,152 @@ export default function ProfilePage() {
         })
 
         if (error) {
-          console.error('Error saving profile:', error)
-          alert(`Failed to save profile: ${error.message}\n\nDetails: ${error.details || 'No additional details'}`)
+          alert(`Failed to save profile: ${error.message}`)
           setLoading(false)
           return
         }
-
-        // Redirect to Dashboard
         router.push('/dashboard')
       }
     } catch (error) {
-      console.error('Error in handleSubmit:', error)
       alert('An error occurred. Please try again.')
       setLoading(false)
     }
   }
 
   return (
-    <div className="min-h-screen p-6 max-w-md mx-auto py-12 bg-linen">
-      <h1 className="text-2xl font-bold text-charcoal mb-2">A little more about you</h1>
-      <p className="text-warm-grey text-sm mb-8">These questions help me identify patterns across all participants for research purposes. Ray won't use this information in your conversations—each session starts fresh with no memory of you.</p>
+    <div className="page-container justify-center">
+      
+      {/* HEADER */}
+      <div className="mb-10 animate-[fadeIn_0.6s_ease-out]">
+        <h1 className="heading-xl">About you.</h1>
+        <p className="body-text mt-4 text-warm-grey">
+          This data is for research analysis only. Ray does not see this.
+        </p>
+      </div>
 
-      <div className="space-y-6">
+      <div className="space-y-8 animate-[fadeIn_0.8s_ease-out_0.2s_both]">
 
-        {/* Name */}
-        <div>
-          <label className="block text-charcoal text-sm font-medium mb-2">What should Ray call you?</label>
-          <input
-            type="text"
-            className="input-field"
-            placeholder="Your name"
-            value={formData.displayName}
-            onChange={e => setFormData({...formData, displayName: e.target.value})}
-          />
-        </div>
-
-        {/* Age Range */}
-        <div>
-          <label className="block text-charcoal text-sm font-medium mb-2">
-            Age Range <span className="text-warm-grey text-xs">(Optional)</span>
-          </label>
-          <select
-            className="input-field"
-            value={formData.ageRange}
-            onChange={e => setFormData({...formData, ageRange: e.target.value})}
-          >
-            <option value="">Select age...</option>
-            <option value="18-24">18-24</option>
-            <option value="25-34">25-34</option>
-            <option value="35-44">35-44</option>
-            <option value="45-54">45-54</option>
-            <option value="55-64">55-64</option>
-            <option value="65+">65+</option>
-          </select>
-        </div>
-
-        {/* Location */}
-        <div>
-          <label className="block text-charcoal text-sm font-medium mb-2">
-            Where do you live? <span className="text-warm-grey text-xs">(Optional)</span>
-          </label>
-          <select
-            className="input-field"
-            value={formData.location}
-            onChange={e => setFormData({...formData, location: e.target.value})}
-          >
-            <option value="">Select location...</option>
-            <option value="Northland">Northland</option>
-            <option value="Auckland">Auckland</option>
-            <option value="Waikato">Waikato</option>
-            <option value="Wellington">Wellington</option>
-            <option value="Christchurch">Christchurch</option>
-            <option value="Dunedin">Dunedin</option>
-            <option value="Other NZ">Other NZ</option>
-            <option value="International">International</option>
-          </select>
-        </div>
-
-        {/* Ethnicity Multi-Select */}
-        <div>
-          <label className="block text-charcoal text-sm font-medium mb-2">Cultural Identity (Select all that apply)</label>
-          <div className="space-y-2 max-h-48 overflow-y-auto bg-white p-4 rounded-[2px] border border-charcoal/10">
-            {ethnicities.map(eth => (
-              <label key={eth} className="flex items-center space-x-3 cursor-pointer hover:bg-linen/50 p-1 rounded-[2px] transition-colors">
-                <input
-                  type="checkbox"
-                  checked={formData.ethnicity.includes(eth)}
-                  onChange={() => toggleSelection('ethnicity', eth)}
-                  className="accent-forest-green w-4 h-4 rounded-[2px]"
-                />
-                <span className="text-sm text-charcoal">{eth}</span>
-              </label>
-            ))}
+        {/* SECTION 1: BASICS */}
+        <section className="space-y-6">
+          <div>
+            <label className="label-sm mb-2 block">What should Ray call you?</label>
+            <input
+              type="text"
+              className="input-field"
+              placeholder="Name"
+              value={formData.displayName}
+              onChange={e => setFormData({...formData, displayName: e.target.value})}
+            />
           </div>
-        </div>
 
-        {/* Identity Factors */}
-        <div>
-          <label className="block text-charcoal text-sm font-medium mb-2">Identity Factors (Select all that apply)</label>
-          <div className="space-y-2 bg-white p-4 rounded-[2px] border border-charcoal/10">
-            {identityOptions.map(opt => (
-              <label key={opt} className="flex items-center space-x-3 cursor-pointer hover:bg-linen/50 p-1 rounded-[2px] transition-colors">
-                <input
-                  type="checkbox"
-                  checked={formData.identityFactors.includes(opt)}
-                  onChange={() => toggleSelection('identityFactors', opt)}
-                  className="accent-forest-green w-4 h-4 rounded-[2px]"
-                />
-                <span className="text-sm text-charcoal">{opt}</span>
-              </label>
-            ))}
+          <div>
+            <label className="label-sm mb-2 block">Phone (Optional)</label>
+            <input
+              type="tel"
+              className="input-field"
+              placeholder="For researcher contact only"
+              value={formData.phone}
+              onChange={e => setFormData({...formData, phone: e.target.value})}
+            />
           </div>
-        </div>
+        </section>
 
-        <button
-          onClick={handleSubmit}
-          disabled={!formData.displayName || loading}
-          className={(!formData.displayName || loading) ? 'btn-disabled w-full mt-8' : 'btn-primary w-full mt-8'}
-        >
-          {loading ? 'Saving...' : 'Meet Ray'}
-        </button>
+        <hr className="border-charcoal/10" />
+
+        {/* SECTION 2: DEMOGRAPHICS */}
+        <section className="grid grid-cols-2 gap-4">
+          <div>
+            <label className="label-sm mb-2 block">Age Range</label>
+            <select
+              className="input-field appearance-none"
+              value={formData.ageRange}
+              onChange={e => setFormData({...formData, ageRange: e.target.value})}
+            >
+              <option value="">Select...</option>
+              <option value="18-24">18-24</option>
+              <option value="25-34">25-34</option>
+              <option value="35-44">35-44</option>
+              <option value="45-54">45-54</option>
+              <option value="55-64">55-64</option>
+              <option value="65+">65+</option>
+            </select>
+          </div>
+
+          <div>
+            <label className="label-sm mb-2 block">Location</label>
+            <select
+              className="input-field appearance-none"
+              value={formData.location}
+              onChange={e => setFormData({...formData, location: e.target.value})}
+            >
+              <option value="">Select...</option>
+              <option value="Northland">Northland</option>
+              <option value="Auckland">Auckland</option>
+              <option value="Wellington">Wellington</option>
+              <option value="Christchurch">Christchurch</option>
+              <option value="Other NZ">Other NZ</option>
+              <option value="International">International</option>
+            </select>
+          </div>
+        </section>
+
+        {/* SECTION 3: IDENTITY (Custom Checkboxes) */}
+        <section>
+          <label className="label-sm mb-3 block">Cultural Identity</label>
+          <div className="bg-white/50 border border-charcoal/10 rounded-sm p-4 h-48 overflow-y-auto custom-scrollbar">
+            <div className="space-y-2">
+              {ethnicities.map(eth => (
+                <label key={eth} className="flex items-center gap-3 cursor-pointer group">
+                  <div className="relative flex items-center">
+                    <input
+                      type="checkbox"
+                      checked={formData.ethnicity.includes(eth)}
+                      onChange={() => toggleSelection('ethnicity', eth)}
+                      className="peer sr-only"
+                    />
+                    <div className="w-5 h-5 border border-charcoal/30 rounded-[2px] peer-checked:bg-forest peer-checked:border-forest transition-all"></div>
+                    <svg className="absolute w-3 h-3 text-linen opacity-0 peer-checked:opacity-100 left-1 top-1 transition-opacity pointer-events-none" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                  </div>
+                  <span className="text-sm text-charcoal/80 group-hover:text-charcoal transition-colors">{eth}</span>
+                </label>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        <section>
+          <label className="label-sm mb-3 block">Identity Factors</label>
+          <div className="bg-white/50 border border-charcoal/10 rounded-sm p-4">
+            <div className="space-y-3">
+              {identityOptions.map(opt => (
+                <label key={opt} className="flex items-center gap-3 cursor-pointer group">
+                  <div className="relative flex items-center">
+                    <input
+                      type="checkbox"
+                      checked={formData.identityFactors.includes(opt)}
+                      onChange={() => toggleSelection('identityFactors', opt)}
+                      className="peer sr-only"
+                    />
+                    <div className="w-5 h-5 border border-charcoal/30 rounded-[2px] peer-checked:bg-forest peer-checked:border-forest transition-all"></div>
+                    <svg className="absolute w-3 h-3 text-linen opacity-0 peer-checked:opacity-100 left-1 top-1 transition-opacity pointer-events-none" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                  </div>
+                  <span className="text-sm text-charcoal/80 group-hover:text-charcoal transition-colors">{opt}</span>
+                </label>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* SUBMIT */}
+        <div className="pt-8 pb-12">
+          <button
+            onClick={handleSubmit}
+            disabled={!formData.displayName || loading}
+            className={(!formData.displayName || loading) ? 'btn-disabled w-full' : 'btn-primary'}
+          >
+            {loading ? 'Saving...' : 'Meet Ray'}
+          </button>
+        </div>
 
       </div>
     </div>

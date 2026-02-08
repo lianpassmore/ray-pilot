@@ -1,56 +1,105 @@
 @import "tailwindcss";
 
 @theme {
+  /* RAY Brand Colors */
   --color-linen: #F5F5DC;
   --color-charcoal: #2C2C2C;
   --color-forest-green: #2F4F2F;
   --color-clay: #8B4513;
   --color-warm-grey: #7A7A7A;
   --color-destructive: #8B0000;
+
+  /* Spacing system for a breathable layout */
+  --spacing-container: 1.5rem;
+  
+  /* Animation */
+  --animate-fade-in: fadeIn 0.6s ease-out forwards;
 }
 
 :root {
-  --foreground-rgb: 44, 44, 44; /* Charcoal */
-  --background-rgb: 245, 245, 220; /* Linen */
+  /* Paper Texture settings */
+  --bg-noise: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.08'/%3E%3C/svg%3E");
 }
 
+/* BASE STYLES */
 body {
-  color: rgb(var(--foreground-rgb));
-  background: rgb(var(--background-rgb));
+  background-color: var(--color-linen);
+  color: var(--color-charcoal);
   min-height: 100vh;
+  /* This adds the high-end paper feel */
+  background-image: var(--bg-noise);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
-/* Custom Utilities for Ray */
+/* UTILITIES */
 @layer utilities {
+  /* 
+     High-End Button: 
+     Solid, sharp edges, slight letter spacing.
+     Removes the generic 'rounded' feel.
+  */
   .btn-primary {
-    @apply bg-clay text-linen px-6 py-3 rounded-[2px] font-semibold tracking-[0.5px] transition-all active:scale-95 hover:bg-clay/90;
+    @apply bg-clay text-linen w-full py-4 px-6 text-[15px] font-bold uppercase tracking-[1.5px] transition-all duration-200 hover:bg-charcoal hover:text-linen active:scale-[0.98] flex items-center justify-center border border-transparent;
   }
 
   .btn-secondary {
-    @apply border border-charcoal bg-transparent text-charcoal px-6 py-3 rounded-[2px] font-semibold tracking-[0.5px] transition-all active:scale-95 hover:bg-charcoal/5;
+    @apply bg-transparent text-charcoal border border-charcoal/30 w-full py-4 px-6 text-[15px] font-bold uppercase tracking-[1.5px] transition-all duration-200 hover:border-charcoal hover:bg-charcoal/5 active:scale-[0.98] flex items-center justify-center;
   }
 
   .btn-disabled {
-    @apply bg-warm-grey text-linen opacity-50 px-6 py-3 rounded-[2px] font-semibold tracking-[0.5px] cursor-not-allowed;
+    @apply bg-charcoal/10 text-charcoal/40 cursor-not-allowed hover:bg-charcoal/10 hover:text-charcoal/40 transform-none;
   }
 
+  /* 
+     High-End Input: 
+     Minimalist, bottom-border or subtle box. 
+     Let's go with a solid, slightly translucent box for readability.
+  */
   .input-field {
-    @apply w-full bg-white border border-charcoal/20 rounded-[2px] p-3 text-charcoal focus:outline-none focus:border-clay placeholder:text-warm-grey/50;
+    @apply w-full bg-white/60 backdrop-blur-sm border border-charcoal/10 p-4 text-[16px] text-charcoal placeholder:text-warm-grey/60 focus:outline-none focus:border-clay focus:bg-white transition-all duration-200 rounded-sm;
   }
 
-  .brand-title {
-    @apply text-[20px] font-extrabold tracking-[2px] uppercase;
+  /* Typography Design Tokens */
+  .heading-xl {
+    @apply text-[32px] md:text-[40px] font-extrabold tracking-tight leading-[1.1] text-charcoal;
   }
 
-  .status-text {
-    @apply text-[14px] uppercase tracking-[1px] text-warm-grey;
+  .heading-lg {
+    @apply text-[24px] font-bold tracking-tight text-charcoal;
   }
 
-  .button-text {
-    @apply text-[16px] font-semibold tracking-[0.5px];
+  .body-text {
+    @apply text-[16px] leading-[1.6] text-charcoal/90;
   }
 
-  .grounding-text {
-    @apply text-[14px] italic text-warm-grey;
+  .caption {
+    @apply text-[12px] uppercase tracking-[1px] font-bold text-warm-grey;
+  }
+
+  /* Layout Utilities */
+  .page-container {
+    @apply max-w-md mx-auto px-6 py-12 min-h-screen flex flex-col;
   }
 }
+
+/* KEYFRAMES */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Add these to your existing @layer utilities in globals.css */
+
+  .label-sm {
+    @apply text-xs font-bold uppercase tracking-[0.15em] text-warm-grey;
+  }
+
+  .btn-ghost {
+    @apply bg-transparent text-charcoal px-4 py-2 rounded-[2px] font-semibold hover:bg-charcoal/5 transition-colors flex items-center gap-2;
+  }
+
+  /* The "Frosted Glass" effect for the slide-out menu */
+  .glass-panel {
+    @apply bg-linen/95 backdrop-blur-md border-l border-charcoal/10;
+  }

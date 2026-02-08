@@ -3,39 +3,48 @@ import AnimatedRayCircle from "@/components/AnimatedRayCircle";
 
 export default function Home() {
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center p-6 text-center bg-linen">
+    // min-h-screen ensures full height, flex-center centers everything
+    <main className="flex min-h-screen flex-col items-center justify-center p-6 relative overflow-hidden">
+      
+      {/* Optional: A very subtle background element or glow could go here */}
 
-      {/* Hero Section */}
-      <div className="flex flex-col items-center gap-6 max-w-md">
+      <div className="flex flex-col items-center w-full max-w-sm animate-[fadeIn_0.8s_ease-out]">
 
-        {/* Animated Logo */}
-        <div className="mb-4">
-          <AnimatedRayCircle state="idle" size={96} />
+        {/* 1. The Focal Point */}
+        <div className="mb-10">
+          {/* I increased size slightly to 110 for better presence */}
+          <AnimatedRayCircle state="idle" size={110} />
         </div>
 
-        <h1 className="text-4xl font-bold text-charcoal">
+        {/* 2. The Headline */}
+        <h1 className="heading-xl text-center mb-3">
           Kia ora, I'm Ray.
         </h1>
 
-        <p className="text-lg text-charcoal leading-relaxed font-medium mb-2">
+        {/* 3. The Anchor / Tagline */}
+        {/* Using serif/italic here creates a nice contrast with the heavy headline */}
+        <p className="text-[18px] text-warm-grey italic font-serif mb-8 tracking-wide">
           Clarity over comfort.
         </p>
 
-        <p className="text-base text-warm-grey leading-relaxed">
-          I'm an AI relationship coach designed to help you see patterns clearly.
+        {/* 4. The Body */}
+        <p className="body-text text-center mb-12 opacity-80">
+          I'm an AI relationship coach designed to help you see patterns clearly. 
           Not a therapist. Just a wise mate on the back porch.
         </p>
 
-        <div className="flex flex-col gap-4 w-full mt-8">
-          <Link href="/login" className="btn-primary text-center">
+        {/* 5. The Action */}
+        <div className="w-full flex flex-col gap-6 items-center">
+          <Link href="/login" className="btn-primary">
             Sign In
           </Link>
-          <div className="text-xs text-warm-grey uppercase tracking-widest mt-4">
+          
+          <div className="caption">
             Research Pilot • Feb 12-26
           </div>
         </div>
-      </div>
 
+      </div>
     </main>
   );
 }

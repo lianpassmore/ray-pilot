@@ -1,11 +1,13 @@
 'use client'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { createClient } from '@/lib/supabase'
 import { X, Info, Phone, LogOut } from 'lucide-react'
 import RayWidget from '@/components/RayWidget'
-import TimeMeter from '@/components/TimeMeter'
+import FeedbackForm from '@/components/FeedbackForm'
 import HeaderIcons from '@/components/HeaderIcons'
+import TimeMeter from '@/components/TimeMeter' // Assuming this exists
 import { useRouter } from 'next/navigation'
+import { AnimatePresence } from 'framer-motion'
 
 export default function Dashboard() {
   const [profile, setProfile] = useState<any>(null)
@@ -15,53 +17,75 @@ export default function Dashboard() {
   const supabase = createClient()
   const router = useRouter()
 
-  // 1. Fetch Profile on Load
+  // Session feedback state
+  const [showFeedback, setShowFeedback] = useState(false)
+  const [currentConversationDbId, setCurrentConversationDbId] = useState<string | null>(null)
+  const [isReturning, setIsReturning] = useState(false)
+
+  // 1. Fetch Profile
+  const [userId, setUserId] = useState<string | null>(null)
   useEffect(() => {
     async function getProfile() {
       const { data: { user } } = await supabase.auth.getUser()
       if (user) {
+        setUserId(user.id)
         const { data } = await supabase
           .from('profiles')
           .select('*')
           .eq('id', user.id)
           .single()
         setProfile(data)
+        setIsReturning((data?.total_sessions ?? 0) > 0)
       }
     }
     getProfile()
   }, [])
 
-  // 2. Countdown Logic (Feb 12 NZT) + Progress Meter
+  const handleSessionEnd = useCallback((conversationDbId: string) => {
+    setCurrentConversationDbId(conversationDbId)
+    setShowFeedback(true)
+  }, [])
+
+  const handleFeedbackComplete = useCallback(() => {
+    setShowFeedback(false)
+    setCurrentConversationDbId(null)
+    // Refresh profile to get updated total_sessions
+    if (userId) {
+      supabase.from('profiles').select('*').eq('id', userId).single()
+        .then(({ data }) => {
+          if (data) {
+            setProfile(data)
+            setIsReturning((data.total_sessions ?? 0) > 0)
+          }
+        })
+    }
+  }, [userId, supabase])
+
+  // 2. Countdown Logic
   useEffect(() => {
-    const targetDate = new Date('2026-02-12T09:00:00+13:00').getTime() // Feb 12, 9AM NZT
-    const endDate = new Date('2026-02-26T23:59:00+13:00').getTime()   // Feb 26, Midnight NZT
+    const targetDate = new Date('2026-02-12T09:00:00+13:00').getTime()
+    const endDate = new Date('2026-02-26T23:59:00+13:00').getTime()
 
     const timer = setInterval(() => {
       const now = new Date().getTime()
-
       if (now > endDate) {
         setTimeLeft('Pilot Closed')
         setProgress(100)
         return
       }
-
       if (now > targetDate) {
         setTimeLeft('Pilot Active')
-        // Calculate progress through pilot period
         const totalDuration = endDate - targetDate
         const elapsed = now - targetDate
         setProgress(Math.min(100, (elapsed / totalDuration) * 100))
         return
       }
-
       const distance = targetDate - now
       const days = Math.floor(distance / (1000 * 60 * 60 * 24))
       const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60))
-
       setTimeLeft(`Starts in: ${days}d ${hours}h`)
       setProgress(0)
     }, 1000)
-
     return () => clearInterval(timer)
   }, [])
 
@@ -73,121 +97,139 @@ export default function Dashboard() {
   if (!profile) return null
 
   return (
-    <div className="min-h-screen bg-linen relative overflow-hidden flex flex-col">
+    <div className="min-h-screen relative flex flex-col">
 
-      {/* HEADER */}
-      <header className="p-6 flex justify-between items-center z-20 border-b border-charcoal/10">
-        <div className="flex items-center gap-4">
-          <h1 className="brand-title text-charcoal">RAY</h1>
-          <TimeMeter progress={progress} />
-        </div>
-        <div className="flex items-center gap-2">
-          <HeaderIcons
-            onSettingsClick={() => setIsMenuOpen(true)}
-          />
-        </div>
-      </header>
+      {/* --- HEADER --- */}
+<header className="absolute top-0 left-0 w-full p-6 md:p-8 flex justify-between items-start z-20">
+  <div>
+    <h1 className="text-2xl font-black tracking-widest text-charcoal">RAY</h1>
+    {/* ... time meter ... */}
+  </div>
 
-      {/* User Greeting */}
-      <div className="px-6 pt-4 text-center">
-        <p className="text-sm text-warm-grey">
-          Kia ora, <span className="font-medium text-charcoal">{profile.display_name.split(' ')[0]}</span>
-        </p>
-        <p className="text-xs text-clay font-medium tracking-wide mt-1 uppercase">
-          {timeLeft}
-        </p>
-      </div>
+  <div className="flex items-center gap-2">
+    <HeaderIcons
+      onSettingsClick={() => setIsMenuOpen(true)}
+    />
+  </div>
+</header>
 
-      {/* MAIN CONTENT - RAY WIDGET */}
+      {/* --- MAIN STAGE --- */}
       <main className="flex-1 flex flex-col items-center justify-center p-6 relative z-10">
-        <RayWidget userName={profile.display_name} />
+        
+        {/* The "Greeting" - Dynamic for returning users */}
+        <div className="absolute top-[20%] text-center pointer-events-none opacity-40">
+          <p className="text-lg font-medium text-charcoal">
+            {isReturning
+              ? `Welcome back, ${profile.display_name.split(' ')[0]}.`
+              : `Kia ora, ${profile.display_name.split(' ')[0]}.`
+            }
+          </p>
+        </div>
+
+        {/* The Widget Wrapper */}
+        <div className="w-full max-w-md aspect-square flex items-center justify-center">
+          <RayWidget userName={profile.display_name} userId={userId!} onSessionEnd={handleSessionEnd} />
+        </div>
+
       </main>
 
-      {/* FOOTER CRISIS LINE (Always Visible) */}
-      <div className="p-4 bg-charcoal/5 border-t border-charcoal/10 text-center">
-        <p className="text-xs text-warm-grey mb-1">Need immediate support?</p>
-        <a href="tel:1737" className="text-sm font-bold text-clay hover:text-clay/80 transition-colors">
-          Call or Text 1737 (24/7)
-        </a>
+      {/* --- FOOTER / GROUNDING --- */}
+      <div className="absolute bottom-6 w-full text-center pb-safe">
+        <p className="text-[10px] text-warm-grey uppercase tracking-widest opacity-60">
+          Clarity over comfort
+        </p>
       </div>
 
-      {/* SLIDE-OUT MENU */}
+      {/* --- FEEDBACK FORM OVERLAY --- */}
+      <AnimatePresence>
+        {showFeedback && currentConversationDbId && userId && (
+          <FeedbackForm
+            conversationDbId={currentConversationDbId}
+            userId={userId}
+            isReturning={isReturning}
+            onComplete={handleFeedbackComplete}
+          />
+        )}
+      </AnimatePresence>
+
+      {/* --- HIGH END SLIDE-OUT MENU --- */}
       {isMenuOpen && (
         <div className="fixed inset-0 z-50 flex justify-end">
-          {/* Backdrop */}
-          <div
-            className="absolute inset-0 bg-charcoal/60 backdrop-blur-sm"
+          {/* Dark Backdrop */}
+          <div 
+            className="absolute inset-0 bg-charcoal/40 backdrop-blur-[2px] transition-opacity" 
             onClick={() => setIsMenuOpen(false)}
           />
 
-          {/* Menu Drawer */}
-          <div className="relative w-80 bg-linen h-full shadow-2xl p-6 flex flex-col border-l border-charcoal/10">
-            <div className="flex justify-end mb-8">
-              <button onClick={() => setIsMenuOpen(false)} className="text-charcoal hover:text-clay transition-colors">
-                <X size={28} />
+          {/* The Drawer */}
+          <div className="relative w-full max-w-sm h-full glass-panel p-8 md:p-12 flex flex-col shadow-2xl animate-[slideIn_0.3s_ease-out]">
+            
+            {/* Close Button */}
+            <div className="flex justify-between items-center mb-12">
+              <span className="label-sm">Menu</span>
+              <button onClick={() => setIsMenuOpen(false)} className="text-charcoal hover:rotate-90 transition-transform duration-300">
+                <X size={24} strokeWidth={1.5} />
               </button>
             </div>
 
-            <div className="space-y-8 flex-1 overflow-y-auto">
-              {/* Section 1: About */}
+            <div className="space-y-12 flex-1 overflow-y-auto no-scrollbar">
+              
+              {/* Block 1: About */}
               <div className="space-y-4">
-                <div className="flex items-center gap-3 text-clay">
-                  <Info size={20} />
-                  <span className="font-bold uppercase text-sm tracking-widest">About Ray</span>
-                </div>
-                <p className="text-sm text-warm-grey leading-relaxed">
-                  Ray is an AI relationship coach—like a thinking partner helping you see patterns in any relationship: romantic, family, friendships, work, or even the one you have with yourself.
-                </p>
-                <p className="text-sm text-warm-grey leading-relaxed">
-                  Your conversations are private. Each session starts fresh—Ray has no memory of previous sessions.
-                </p>
-                <p className="text-sm text-warm-grey leading-relaxed">
-                  Ray is coaching, not therapy. Ray can't treat mental health conditions or provide crisis intervention.
+                <h3 className="text-lg font-bold text-forest flex items-center gap-2">
+                  <Info size={16} />
+                  About Ray
+                </h3>
+                <p className="text-sm text-charcoal/80 leading-relaxed font-medium">
+                  Ray is a thinking partner. Not a therapist. Not a cheerleader.<br/>
+                  Conversations are private and start fresh every time.
                 </p>
               </div>
 
-              {/* Section 2: Crisis Resources */}
-              <div className="space-y-4">
-                <div className="flex items-center gap-3 text-destructive">
-                  <Phone size={20} />
-                  <span className="font-bold uppercase text-sm tracking-widest">Support</span>
-                </div>
-                <ul className="text-sm text-warm-grey space-y-3">
-                  <li className="flex justify-between">
-                    <span>Mental Health (1737)</span>
-                    <a href="tel:1737" className="text-clay hover:text-clay/80 underline">Call</a>
+              {/* Block 2: Support */}
+              <div className="space-y-6">
+                <h3 className="text-lg font-bold text-destructive flex items-center gap-2">
+                  <Phone size={16} />
+                  Crisis Support
+                </h3>
+                <ul className="space-y-4">
+                  <li className="flex justify-between items-center border-b border-charcoal/10 pb-2">
+                    <span className="text-sm font-medium">Mental Health (1737)</span>
+                    <a href="tel:1737" className="text-xs bg-charcoal text-linen px-3 py-1 rounded-sm uppercase tracking-wider font-bold">Call</a>
                   </li>
-                  <li className="flex justify-between">
-                    <span>Lifeline</span>
-                    <a href="tel:0800543354" className="text-clay hover:text-clay/80 underline">0800 543 354</a>
+                  <li className="flex justify-between items-center border-b border-charcoal/10 pb-2">
+                    <span className="text-sm font-medium">Women's Refuge</span>
+                    <a href="tel:0800733843" className="text-xs border border-charcoal text-charcoal px-3 py-1 rounded-sm uppercase tracking-wider font-bold hover:bg-charcoal hover:text-linen transition-colors">Call</a>
                   </li>
-                  <li className="flex justify-between">
-                    <span>Women's Refuge</span>
-                    <a href="tel:0800733843" className="text-clay hover:text-clay/80 underline">0800 733 843</a>
-                  </li>
-                  <li className="flex justify-between">
-                    <span>Emergency</span>
-                    <a href="tel:111" className="text-clay hover:text-clay/80 underline">111</a>
+                  <li className="flex justify-between items-center border-b border-charcoal/10 pb-2">
+                    <span className="text-sm font-medium">Emergency (111)</span>
+                    <a href="tel:111" className="text-xs bg-destructive text-white px-3 py-1 rounded-sm uppercase tracking-wider font-bold">Call</a>
                   </li>
                 </ul>
               </div>
 
-              {/* Section 3: Researcher */}
-              <div className="pt-8 border-t border-charcoal/10">
-                <p className="text-xs text-warm-grey mb-2 uppercase tracking-wide">Researcher Contact</p>
-                <p className="text-sm text-charcoal font-medium">Lian Passmore</p>
-                <p className="text-sm text-warm-grey">lianpassmore@gmail.com</p>
-                <p className="text-sm text-warm-grey">027 566 8803</p>
+              {/* Block 3: Research Info */}
+              <div className="pt-8">
+                <p className="label-sm mb-2">Researcher</p>
+                <div className="bg-white/50 p-4 rounded-sm border border-charcoal/5">
+                  <p className="text-sm font-bold text-charcoal">Lian Passmore</p>
+                  <p className="text-xs text-warm-grey mt-1">lianpassmore@gmail.com</p>
+                  <p className="text-xs text-warm-grey mt-1"><a href="tel:0275668803" className="hover:text-charcoal transition-colors">027 566 8803</a></p>
+                </div>
               </div>
             </div>
 
-            <button
-              onClick={handleSignOut}
-              className="mt-auto flex items-center gap-3 text-destructive hover:text-destructive/80 transition-colors font-medium"
-            >
-              <LogOut size={20} />
-              Sign Out
-            </button>
+            {/* Footer Action */}
+            <div className="mt-8 border-t border-charcoal/10 pt-6">
+              <button 
+                onClick={handleSignOut}
+                className="w-full flex items-center justify-center gap-2 text-sm font-bold text-warm-grey hover:text-charcoal transition-colors uppercase tracking-widest"
+              >
+                <LogOut size={16} />
+                Sign Out
+              </button>
+            </div>
+
           </div>
         </div>
       )}

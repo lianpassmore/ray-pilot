@@ -1,4 +1,4 @@
-import { Lightbulb } from "lucide-react";
+import { Menu } from "lucide-react";
 
 interface HeaderIconsProps {
   onSettingsClick?: () => void;
@@ -11,10 +11,11 @@ export default function HeaderIcons({
     <div className="flex items-center gap-1">
       <button
         onClick={onSettingsClick}
-        className="p-2 text-charcoal hover:text-clay transition-colors"
-        aria-label="About & Support"
+        className="p-2 text-charcoal hover:bg-charcoal/5 rounded-sm transition-all duration-200 active:scale-95"
+        aria-label="Open Menu"
       >
-        <Lightbulb size={20} />
+        {/* Thin stroke (1.5) matches the editorial font weight */}
+        <Menu size={24} strokeWidth={1.5} />
       </button>
     </div>
   );

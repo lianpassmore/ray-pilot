@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { Resend } from 'resend';
+import { ElevenLabsClient } from '@elevenlabs/elevenlabs-js';
 
 // Initialize Admin Client (Bypasses RLS to log incidents)
 const supabase = createClient(
@@ -10,11 +11,29 @@ const supabase = createClient(
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
-// GET handler - Generate ElevenLabs signed URL
+// Simple device detection from User-Agent
+function parseDevice(userAgent: string) {
+  const ua = userAgent.toLowerCase();
+
+  let deviceType = 'desktop';
+  if (/ipad|tablet/.test(ua)) deviceType = 'tablet';
+  else if (/mobile|android|iphone|ipod/.test(ua)) deviceType = 'mobile';
+
+  let browser = 'unknown';
+  if (ua.includes('edg')) browser = 'edge';
+  else if (ua.includes('chrome')) browser = 'chrome';
+  else if (ua.includes('safari')) browser = 'safari';
+  else if (ua.includes('firefox')) browser = 'firefox';
+
+  return { deviceType, browser };
+}
+
+// GET handler - Generate ElevenLabs signed URL and create conversation record
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
     const userName = searchParams.get('name') || 'User';
+    const userId = searchParams.get('userId');
 
     // Get ElevenLabs agent ID and API key from environment
     const agentId = process.env.AGENT_ID;
@@ -44,7 +63,49 @@ export async function GET(request: Request) {
 
     const data = await response.json();
 
-    return NextResponse.json({ signedUrl: data.signed_url });
+    // Create a conversations row so the webhook can link back to this user
+    let conversationDbId: string | null = null;
+    let sessionNumber = 1;
+
+    if (userId) {
+      // Parse device info from User-Agent
+      const userAgent = request.headers.get('user-agent') || '';
+      const { deviceType, browser } = parseDevice(userAgent);
+
+      // Count previous sessions for this user
+      const { count } = await supabase
+        .from('conversations')
+        .select('*', { count: 'exact', head: true })
+        .eq('user_id', userId);
+
+      sessionNumber = (count ?? 0) + 1;
+
+      const { data: convo } = await supabase
+        .from('conversations')
+        .insert({
+          user_id: userId,
+          agent_id: agentId,
+          session_number: sessionNumber,
+          status: 'active',
+          device_type: deviceType,
+          browser: browser,
+        })
+        .select('id')
+        .single();
+
+      conversationDbId = convo?.id ?? null;
+    }
+
+    // Determine session type for agent opening protocol
+    const FINAL_REVIEW_DATE = new Date('2026-02-26T00:00:00');
+    let sessionType = 'returning';
+    if (sessionNumber === 1) {
+      sessionType = 'first_time';
+    } else if (new Date() >= FINAL_REVIEW_DATE) {
+      sessionType = 'final_review';
+    }
+
+    return NextResponse.json({ signedUrl: data.signed_url, conversationDbId, sessionNumber, sessionType });
   } catch (error) {
     console.error('Error generating signed URL:', error);
     return NextResponse.json(
@@ -54,14 +115,112 @@ export async function GET(request: Request) {
   }
 }
 
+// PATCH handler - Link ElevenLabs conversation_id to our DB row
+export async function PATCH(request: Request) {
+  try {
+    const { conversationDbId, elevenLabsConversationId } = await request.json();
+
+    if (!conversationDbId || !elevenLabsConversationId) {
+      return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
+    }
+
+    await supabase
+      .from('conversations')
+      .update({ conversation_id: elevenLabsConversationId })
+      .eq('id', conversationDbId);
+
+    return NextResponse.json({ status: 'linked' });
+  } catch (error) {
+    console.error('PATCH error:', error);
+    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+  }
+}
+
+// PUT handler - End session, record duration, increment total_sessions
+export async function PUT(request: Request) {
+  try {
+    const { conversationDbId } = await request.json();
+
+    if (!conversationDbId) {
+      return NextResponse.json({ error: 'Missing conversationDbId' }, { status: 400 });
+    }
+
+    const { data: convo } = await supabase
+      .from('conversations')
+      .select('started_at, user_id')
+      .eq('id', conversationDbId)
+      .single();
+
+    if (!convo) {
+      return NextResponse.json({ error: 'Conversation not found' }, { status: 404 });
+    }
+
+    const endedAt = new Date();
+    const startedAt = new Date(convo.started_at);
+    const durationSeconds = Math.round((endedAt.getTime() - startedAt.getTime()) / 1000);
+
+    // Mark conversation as completed
+    await supabase
+      .from('conversations')
+      .update({
+        ended_at: endedAt.toISOString(),
+        duration_seconds: durationSeconds,
+        status: 'completed',
+      })
+      .eq('id', conversationDbId);
+
+    // Increment total_sessions and update last_active_at on profile
+    if (convo.user_id) {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('total_sessions')
+        .eq('id', convo.user_id)
+        .single();
+
+      await supabase
+        .from('profiles')
+        .update({
+          total_sessions: (profile?.total_sessions ?? 0) + 1,
+          last_active_at: endedAt.toISOString(),
+        })
+        .eq('id', convo.user_id);
+    }
+
+    return NextResponse.json({ status: 'ended', durationSeconds });
+  } catch (error) {
+    console.error('PUT error:', error);
+    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+  }
+}
+
 // POST handler - Webhook for crisis detection
 export async function POST(request: Request) {
   try {
-    const body = await request.json();
-    
-    // ElevenLabs sends the full transcript in the body
-    // Structure depends on their webhook format, usually body.transcript or similar
-    const transcript = body.transcript || []; 
+    // 0. Verify webhook signature
+    const rawBody = await request.text();
+    const sigHeader = request.headers.get('elevenlabs-signature');
+    const webhookSecret = process.env.ELEVENLABS_WEBHOOK_SECRET;
+
+    if (!webhookSecret) {
+      console.error('ELEVENLABS_WEBHOOK_SECRET not configured');
+      return NextResponse.json({ error: 'Webhook secret not configured' }, { status: 500 });
+    }
+
+    if (!sigHeader) {
+      return NextResponse.json({ error: 'Missing signature' }, { status: 401 });
+    }
+
+    const client = new ElevenLabsClient();
+    let event;
+    try {
+      event = await client.webhooks.constructEvent(rawBody, sigHeader, webhookSecret);
+    } catch {
+      console.error('Webhook signature verification failed');
+      return NextResponse.json({ error: 'Invalid signature' }, { status: 401 });
+    }
+
+    const body = event.data ?? JSON.parse(rawBody);
+    const transcript = body.transcript || [];
     const conversationId = body.conversation_id;
 
     // 1. Scan for Crisis Keywords (Simple heuristic for MVP)
@@ -79,18 +238,34 @@ export async function POST(request: Request) {
     if (detectedCrisis) {
       console.log(`CRISIS DETECTED: ${detectedCrisis}`);
 
-      // 2. Log to Supabase
-      // Note: In a real app, you'd map conversation_id to user_id via a lookup table
-      // For this pilot, we might just log the raw incident
+      // 2. Look up conversation record by ElevenLabs conversation_id
+      let dbConversationId: string | null = null;
+      let userId: string | null = null;
+      if (conversationId) {
+        const { data: convo } = await supabase
+          .from('conversations')
+          .select('id, user_id')
+          .eq('conversation_id', conversationId)
+          .single();
+        if (convo) {
+          dbConversationId = convo.id;
+          userId = convo.user_id;
+        }
+      }
+
+      // 3. Log to Supabase crisis_incidents
       await supabase.from('crisis_incidents').insert({
-        transcript_snippet: fullText.substring(0, 1000), // Limit size
-        crisis_type: detectedCrisis,
-        researcher_notified: true
+        trigger_type: detectedCrisis,
+        user_message: fullText.substring(0, 1000),
+        conversation_id: dbConversationId,
+        user_id: userId,
+        researcher_notified_at: new Date().toISOString(),
+        status: 'pending'
       });
 
       // 3. Email Researcher (You)
       await resend.emails.send({
-        from: 'Ray Safety <safety@yourdomain.com>', // Use default Resend domain if needed
+        from: process.env.SAFETY_EMAIL_FROM || 'Ray Safety <onboarding@resend.dev>',
         to: process.env.RESEARCHER_EMAIL!,
         subject: `⚠️ CRISIS DETECTED in Ray Session`,
         html: `

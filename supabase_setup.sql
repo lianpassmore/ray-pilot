@@ -2,6 +2,7 @@
 CREATE TABLE IF NOT EXISTS profiles (
   id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
   display_name TEXT,
+  phone TEXT,
   age_range TEXT,
   location TEXT,
   gender TEXT,

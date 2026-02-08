@@ -50,12 +50,19 @@ This document contains all user-facing text from the Ray application for proofre
 - **Subheading (OTP mode):** "Create account or sign in with Ray."
 - **Subheading (Password mode):** "Sign in to connect with Ray."
 
+### Buttons
+- **Google Sign-In:** "Continue with Google"
+- **Google Sign-In (loading):** "Connecting..."
+
+### Divider
+- "OR" _(with horizontal lines on each side)_
+
 ### Form Fields
 - **Email placeholder:** "Email address"
 - **Password placeholder:** "Password"
 - **OTP code placeholder:** "Enter your code"
 
-### Buttons
+### Other Buttons
 - **OTP Send (loading):** "Sending code..."
 - **OTP Send (default):** "Continue with Email"
 - **Password Login (loading):** "Signing in..."
@@ -110,6 +117,8 @@ This document contains all user-facing text from the Ray application for proofre
 ### Form Labels & Placeholders
 - **Name field label:** "What should Ray call you?"
 - **Name placeholder:** "Your name"
+- **Phone field label:** "Phone Number _(Optional - for researcher contact)_"
+- **Phone placeholder:** "027 123 4567"
 - **Age field label:** "Age Range _(Optional)_"
 - **Age placeholder:** "Select age..."
 - **Location field label:** "Where do you live? _(Optional)_"
