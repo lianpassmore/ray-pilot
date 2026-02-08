@@ -197,6 +197,14 @@ export default function Dashboard() {
                   Not therapy. Not a cheerleader. Just a thinking partner.<br/>
                   Private. Fresh start every time.
                 </p>
+                <a
+                  href="https://ray-research-info.vercel.app/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-block text-xs font-bold uppercase tracking-widest text-clay hover:text-charcoal transition-colors"
+                >
+                  More Info
+                </a>
               </div>
 
               {/* Block 2: Support */}
