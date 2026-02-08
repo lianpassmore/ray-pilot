@@ -98,7 +98,7 @@ export default function Dashboard() {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 1.2, ease: "easeOut" }}
-          className="text-center mb-16"
+          className="text-center mb-0"
         >
           <h2 className="text-3xl md:text-4xl tracking-tight text-charcoal">
             <span className="font-light">Kia ora,</span>{' '}
