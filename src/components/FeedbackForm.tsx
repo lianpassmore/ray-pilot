@@ -7,7 +7,6 @@ import { X } from 'lucide-react';
 interface FeedbackFormProps {
   conversationDbId: string;
   userId: string;
-  isReturning: boolean;
   onComplete: () => void;
 }
 
@@ -39,7 +38,7 @@ function RatingScale({ value, onChange, label }: { value: number; onChange: (v: 
   );
 }
 
-export default function FeedbackForm({ conversationDbId, userId, isReturning, onComplete }: FeedbackFormProps) {
+export default function FeedbackForm({ conversationDbId, userId, onComplete }: FeedbackFormProps) {
   const [ratings, setRatings] = useState({
     rating_helpful: 0,
     rating_safe: 0,
@@ -54,15 +53,8 @@ export default function FeedbackForm({ conversationDbId, userId, isReturning, on
     takeaway: '',
   });
 
-  const [returning, setReturning] = useState({
-    returning_changes_noticed: '',
-    returning_changes_description: '',
-    returning_tried_differently: '',
-    returning_tried_description: '',
-  });
-
   const [submitting, setSubmitting] = useState(false);
-  const [step, setStep] = useState<'returning' | 'ratings' | 'openended'>(isReturning ? 'returning' : 'ratings');
+  const [step, setStep] = useState<'ratings' | 'openended'>('ratings');
 
   const handleSubmit = async () => {
     setSubmitting(true);
@@ -73,10 +65,9 @@ export default function FeedbackForm({ conversationDbId, userId, isReturning, on
         body: JSON.stringify({
           conversation_id: conversationDbId,
           user_id: userId,
-          feedback_type: isReturning ? 'returning' : 'session',
+          feedback_type: 'session',
           ...ratings,
           ...openEnded,
-          ...(isReturning ? returning : {}),
         }),
       });
       onComplete();
@@ -106,7 +97,7 @@ export default function FeedbackForm({ conversationDbId, userId, isReturning, on
           <div>
             <h2 className="text-lg font-bold text-charcoal">Session Feedback</h2>
             <p className="text-xs text-warm-grey mt-1">
-              {step === 'returning' ? 'Quick check-in' : step === 'ratings' ? 'Rate your experience' : 'Almost done'}
+              {step === 'ratings' ? 'Rate your experience' : 'Almost done'}
             </p>
           </div>
           <button onClick={onComplete} className="text-warm-grey hover:text-charcoal transition-colors">
@@ -115,74 +106,7 @@ export default function FeedbackForm({ conversationDbId, userId, isReturning, on
         </div>
 
         <div className="p-6">
-          {/* Step 1: Returning user check-in */}
-          {step === 'returning' && (
-            <div className="space-y-6">
-              <p className="label-sm text-clay">Welcome Back</p>
-
-              <div className="space-y-3">
-                <label className="label-sm">Have you noticed any changes since your last session?</label>
-                <div className="flex gap-3">
-                  {['Yes', 'No', 'Not sure'].map(opt => (
-                    <button
-                      key={opt}
-                      type="button"
-                      onClick={() => setReturning(r => ({ ...r, returning_changes_noticed: opt }))}
-                      className={`px-4 py-2 text-sm font-bold border rounded-sm transition-all ${
-                        returning.returning_changes_noticed === opt
-                          ? 'bg-charcoal text-linen border-charcoal'
-                          : 'bg-white/60 border-charcoal/10 hover:border-charcoal/30'
-                      }`}
-                    >
-                      {opt}
-                    </button>
-                  ))}
-                </div>
-                {returning.returning_changes_noticed === 'Yes' && (
-                  <textarea
-                    value={returning.returning_changes_description}
-                    onChange={e => setReturning(r => ({ ...r, returning_changes_description: e.target.value }))}
-                    placeholder="What changes have you noticed?"
-                    className="input-field min-h-[80px] resize-none"
-                  />
-                )}
-              </div>
-
-              <div className="space-y-3">
-                <label className="label-sm">Have you tried doing anything differently?</label>
-                <div className="flex gap-3">
-                  {['Yes', 'No', 'Not sure'].map(opt => (
-                    <button
-                      key={opt}
-                      type="button"
-                      onClick={() => setReturning(r => ({ ...r, returning_tried_differently: opt }))}
-                      className={`px-4 py-2 text-sm font-bold border rounded-sm transition-all ${
-                        returning.returning_tried_differently === opt
-                          ? 'bg-charcoal text-linen border-charcoal'
-                          : 'bg-white/60 border-charcoal/10 hover:border-charcoal/30'
-                      }`}
-                    >
-                      {opt}
-                    </button>
-                  ))}
-                </div>
-                {returning.returning_tried_differently === 'Yes' && (
-                  <textarea
-                    value={returning.returning_tried_description}
-                    onChange={e => setReturning(r => ({ ...r, returning_tried_description: e.target.value }))}
-                    placeholder="What did you try?"
-                    className="input-field min-h-[80px] resize-none"
-                  />
-                )}
-              </div>
-
-              <button onClick={() => setStep('ratings')} className="btn-primary">
-                Continue
-              </button>
-            </div>
-          )}
-
-          {/* Step 2: Ratings */}
+          {/* Step 1: Ratings */}
           {step === 'ratings' && (
             <div className="space-y-6">
               <RatingScale
@@ -214,10 +138,16 @@ export default function FeedbackForm({ conversationDbId, userId, isReturning, on
               <button onClick={() => setStep('openended')} className="btn-primary">
                 Continue
               </button>
+              <button
+                onClick={onComplete}
+                className="w-full text-center text-xs text-warm-grey hover:text-charcoal transition-colors uppercase tracking-widest font-bold py-2"
+              >
+                Skip
+              </button>
             </div>
           )}
 
-          {/* Step 3: Open-ended */}
+          {/* Step 2: Open-ended */}
           {step === 'openended' && (
             <div className="space-y-6">
               <div className="space-y-2">

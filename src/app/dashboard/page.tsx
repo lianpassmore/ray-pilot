@@ -27,16 +27,29 @@ export default function Dashboard() {
   useEffect(() => {
     async function getProfile() {
       const { data: { user } } = await supabase.auth.getUser()
-      if (user) {
-        setUserId(user.id)
-        const { data } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', user.id)
-          .single()
-        setProfile(data)
-        setIsReturning((data?.total_sessions ?? 0) > 0)
+      if (!user) {
+        router.push('/login')
+        return
       }
+      setUserId(user.id)
+      const { data } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', user.id)
+        .single()
+
+      // Redirect to onboarding if consent or profile incomplete
+      if (!data || !data.consent_agreed) {
+        router.push('/onboarding/consent')
+        return
+      }
+      if (!data.display_name || !data.phone) {
+        router.push('/onboarding/profile')
+        return
+      }
+
+      setProfile(data)
+      setIsReturning((data?.total_sessions ?? 0) > 0)
     }
     getProfile()
   }, [])
@@ -114,10 +127,10 @@ export default function Dashboard() {
 </header>
 
       {/* --- MAIN STAGE --- */}
-      <main className="flex-1 flex flex-col items-center justify-center p-6 relative z-10">
-        
+      <main className="flex-1 flex flex-col items-center justify-center px-6 pt-24 pb-16 relative z-10">
+
         {/* The "Greeting" - Dynamic for returning users */}
-        <div className="absolute top-[20%] text-center pointer-events-none opacity-40">
+        <div className="text-center mb-6 opacity-40">
           <p className="text-lg font-medium text-charcoal">
             {isReturning
               ? `Welcome back, ${profile.display_name.split(' ')[0]}.`
@@ -127,7 +140,7 @@ export default function Dashboard() {
         </div>
 
         {/* The Widget Wrapper */}
-        <div className="w-full max-w-md aspect-square flex items-center justify-center">
+        <div className="w-full max-w-md flex items-center justify-center">
           <RayWidget userName={profile.display_name} userId={userId!} onSessionEnd={handleSessionEnd} />
         </div>
 
@@ -146,7 +159,6 @@ export default function Dashboard() {
           <FeedbackForm
             conversationDbId={currentConversationDbId}
             userId={userId}
-            isReturning={isReturning}
             onComplete={handleFeedbackComplete}
           />
         )}
@@ -181,8 +193,9 @@ export default function Dashboard() {
                   About Ray
                 </h3>
                 <p className="text-sm text-charcoal/80 leading-relaxed font-medium">
-                  Ray is a thinking partner. Not a therapist. Not a cheerleader.<br/>
-                  Conversations are private and start fresh every time.
+                  Ray holds space for honest conversations about relationships.<br/>
+                  Not therapy. Not a cheerleader. Just a thinking partner.<br/>
+                  Private. Fresh start every time.
                 </p>
               </div>
 

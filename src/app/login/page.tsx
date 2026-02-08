@@ -2,6 +2,7 @@
 import { useState } from 'react'
 import { createClient } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
+import Image from 'next/image'
 
 export default function Login() {
   const [email, setEmail] = useState('')
@@ -13,6 +14,25 @@ export default function Login() {
   const [message, setMessage] = useState<string | null>(null)
   const supabase = createClient()
   const router = useRouter()
+
+  const redirectAfterLogin = async () => {
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) { router.push('/dashboard'); return }
+
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('display_name, consent_agreed, phone')
+      .eq('id', user.id)
+      .single()
+
+    if (!profile || !profile.consent_agreed) {
+      router.push('/onboarding/consent')
+    } else if (!profile.display_name || !profile.phone) {
+      router.push('/onboarding/profile')
+    } else {
+      router.push('/dashboard')
+    }
+  }
 
   const handleGoogleLogin = async () => {
     setLoading(true)
@@ -45,7 +65,7 @@ export default function Login() {
       setMessage('Invalid email or password.')
       setLoading(false)
     } else {
-      router.push('/dashboard')
+      await redirectAfterLogin()
     }
   }
 
@@ -97,7 +117,7 @@ export default function Login() {
           return
         }
       }
-      router.push('/dashboard')
+      await redirectAfterLogin()
     }
   }
 
@@ -106,6 +126,11 @@ export default function Login() {
       
       <div className="w-full max-w-sm space-y-8 animate-[fadeIn_0.6s_ease-out]">
         
+        {/* LOGO */}
+        <div className="flex justify-center">
+          <Image src="/logo.svg" alt="Ray" width={80} height={80} priority />
+        </div>
+
         {/* HEADER */}
         <div className="text-center space-y-2">
           <h2 className="heading-xl text-center">Nau mai.</h2>

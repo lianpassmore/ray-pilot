@@ -47,7 +47,7 @@ export default function ProfilePage() {
   }
 
   const handleSubmit = async () => {
-    if (!formData.displayName) return
+    if (!formData.displayName || !formData.phone) return
     setLoading(true)
 
     try {
@@ -87,7 +87,7 @@ export default function ProfilePage() {
       <div className="mb-10 animate-[fadeIn_0.6s_ease-out]">
         <h1 className="heading-xl">About you.</h1>
         <p className="body-text mt-4 text-warm-grey">
-          This data is for research analysis only. Ray does not see this.
+          This data is for research analysis only. Only your name is shared with Ray.
         </p>
       </div>
 
@@ -107,13 +107,14 @@ export default function ProfilePage() {
           </div>
 
           <div>
-            <label className="label-sm mb-2 block">Phone (Optional)</label>
+            <label className="label-sm mb-2 block">Phone</label>
             <input
               type="tel"
               className="input-field"
               placeholder="For researcher contact only"
               value={formData.phone}
               onChange={e => setFormData({...formData, phone: e.target.value})}
+              required
             />
           </div>
         </section>
@@ -171,7 +172,7 @@ export default function ProfilePage() {
                       onChange={() => toggleSelection('ethnicity', eth)}
                       className="peer sr-only"
                     />
-                    <div className="w-5 h-5 border border-charcoal/30 rounded-[2px] peer-checked:bg-forest peer-checked:border-forest transition-all"></div>
+                    <div className="w-5 h-5 border border-charcoal/30 rounded-[2px] peer-checked:bg-forest-green peer-checked:border-forest-green transition-all"></div>
                     <svg className="absolute w-3 h-3 text-linen opacity-0 peer-checked:opacity-100 left-1 top-1 transition-opacity pointer-events-none" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
                   </div>
                   <span className="text-sm text-charcoal/80 group-hover:text-charcoal transition-colors">{eth}</span>
@@ -194,7 +195,7 @@ export default function ProfilePage() {
                       onChange={() => toggleSelection('identityFactors', opt)}
                       className="peer sr-only"
                     />
-                    <div className="w-5 h-5 border border-charcoal/30 rounded-[2px] peer-checked:bg-forest peer-checked:border-forest transition-all"></div>
+                    <div className="w-5 h-5 border border-charcoal/30 rounded-[2px] peer-checked:bg-forest-green peer-checked:border-forest-green transition-all"></div>
                     <svg className="absolute w-3 h-3 text-linen opacity-0 peer-checked:opacity-100 left-1 top-1 transition-opacity pointer-events-none" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
                   </div>
                   <span className="text-sm text-charcoal/80 group-hover:text-charcoal transition-colors">{opt}</span>
@@ -208,8 +209,8 @@ export default function ProfilePage() {
         <div className="pt-8 pb-12">
           <button
             onClick={handleSubmit}
-            disabled={!formData.displayName || loading}
-            className={(!formData.displayName || loading) ? 'btn-disabled w-full' : 'btn-primary'}
+            disabled={!formData.displayName || !formData.phone || loading}
+            className={(!formData.displayName || !formData.phone || loading) ? 'btn-disabled w-full' : 'btn-primary'}
           >
             {loading ? 'Saving...' : 'Meet Ray'}
           </button>

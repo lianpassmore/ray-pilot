@@ -14,7 +14,7 @@ export async function GET(request: Request) {
     if (user) {
       const { data: profile } = await supabase
         .from('profiles')
-        .select('display_name, consent_agreed')
+        .select('display_name, consent_agreed, phone')
         .eq('id', user.id)
         .single()
 
@@ -22,7 +22,7 @@ export async function GET(request: Request) {
       if (!profile || !profile.consent_agreed) {
         return NextResponse.redirect(new URL('/onboarding/consent', requestUrl.origin))
       }
-      if (!profile.display_name) {
+      if (!profile.display_name || !profile.phone) {
         return NextResponse.redirect(new URL('/onboarding/profile', requestUrl.origin))
       }
     }

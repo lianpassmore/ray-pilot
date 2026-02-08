@@ -1,5 +1,5 @@
 import Link from "next/link";
-import AnimatedRayCircle from "@/components/AnimatedRayCircle";
+import Image from "next/image";
 
 export default function Home() {
   return (
@@ -12,8 +12,7 @@ export default function Home() {
 
         {/* 1. The Focal Point */}
         <div className="mb-10">
-          {/* I increased size slightly to 110 for better presence */}
-          <AnimatedRayCircle state="idle" size={110} />
+          <Image src="/logo.svg" alt="Ray" width={110} height={110} priority />
         </div>
 
         {/* 2. The Headline */}

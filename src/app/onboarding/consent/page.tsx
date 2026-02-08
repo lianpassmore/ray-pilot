@@ -96,7 +96,7 @@ export default function ConsentPage() {
               onChange={(e) => setAgreed(e.target.checked)}
               className="peer sr-only"
             />
-            <div className="w-6 h-6 border-2 border-charcoal/30 rounded-[2px] peer-checked:bg-forest peer-checked:border-forest transition-all group-hover:border-charcoal"></div>
+            <div className="w-6 h-6 border-2 border-charcoal/30 rounded-[2px] peer-checked:bg-forest-green peer-checked:border-forest-green transition-all group-hover:border-charcoal"></div>
             <svg 
               className="absolute w-4 h-4 text-linen opacity-0 peer-checked:opacity-100 left-1 top-1 pointer-events-none transition-opacity" 
               viewBox="0 0 24 24" 

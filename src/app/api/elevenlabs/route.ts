@@ -98,11 +98,34 @@ export async function GET(request: Request) {
 
     // Determine session type for agent opening protocol
     const FINAL_REVIEW_DATE = new Date('2026-02-26T00:00:00');
+    const now = new Date();
     let sessionType = 'returning';
+
     if (sessionNumber === 1) {
       sessionType = 'first_time';
-    } else if (new Date() >= FINAL_REVIEW_DATE) {
+    } else if (now >= FINAL_REVIEW_DATE) {
       sessionType = 'final_review';
+    } else if (userId) {
+      // Check if user already had a session today
+      const { data: lastConvo } = await supabase
+        .from('conversations')
+        .select('ended_at')
+        .eq('user_id', userId)
+        .eq('status', 'completed')
+        .order('ended_at', { ascending: false })
+        .limit(1)
+        .single();
+
+      if (lastConvo?.ended_at) {
+        const lastDate = new Date(lastConvo.ended_at);
+        if (
+          lastDate.getFullYear() === now.getFullYear() &&
+          lastDate.getMonth() === now.getMonth() &&
+          lastDate.getDate() === now.getDate()
+        ) {
+          sessionType = 'returning_same_day';
+        }
+      }
     }
 
     return NextResponse.json({ signedUrl: data.signed_url, conversationDbId, sessionNumber, sessionType });

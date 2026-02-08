@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { useConversation } from '@elevenlabs/react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Mic, MicOff, MessageSquare, PhoneOff, Send, X } from 'lucide-react';
+import { MessageSquare, Mic, PhoneOff, Send, X, VolumeX, Volume2 } from 'lucide-react';
 import AnimatedRayCircle from './AnimatedRayCircle';
 
 interface RayWidgetProps {
@@ -14,8 +14,8 @@ interface RayWidgetProps {
 
 export default function RayWidget({ userName, userId, onSessionEnd }: RayWidgetProps) {
   const [error, setError] = useState<string | null>(null);
-  const [isMuted, setIsMuted] = useState(false);
   const [mode, setMode] = useState<'voice' | 'text'>('voice');
+  const [isMuted, setIsMuted] = useState(false);
   const [textInput, setTextInput] = useState('');
   const conversationDbIdRef = useRef<string | null>(null);
 
@@ -31,12 +31,18 @@ export default function RayWidget({ userName, userId, onSessionEnd }: RayWidgetP
       setError('Connection disrupted.');
     },
     onMessage: (message) => {
-      // Capture incoming messages for text mode history
+      // Capture messages for chat history
       if (message.message) {
-        setMessages(prev => [...prev, { 
-          role: message.source === 'user' ? 'user' : 'agent', 
-          content: message.message 
-        }]);
+        if (message.source === 'user') {
+          // Only add user messages from voice transcription (text messages are added optimistically)
+          setMessages(prev => {
+            const last = prev[prev.length - 1];
+            if (last?.role === 'user' && last.content === message.message) return prev;
+            return [...prev, { role: 'user', content: message.message }];
+          });
+        } else {
+          setMessages(prev => [...prev, { role: 'agent', content: message.message }]);
+        }
       }
     },
   });
@@ -50,9 +56,10 @@ export default function RayWidget({ userName, userId, onSessionEnd }: RayWidgetP
 
   // --- ACTIONS ---
 
-  const startConversation = useCallback(async () => {
+  const startConversation = useCallback(async (startMode: 'voice' | 'text' = 'voice') => {
     try {
       setError(null);
+      setMode(startMode);
 
       // 1. Get Signed URL and create conversation record
       const response = await fetch(`/api/elevenlabs?name=${encodeURIComponent(userName)}&userId=${encodeURIComponent(userId)}`);
@@ -73,6 +80,12 @@ export default function RayWidget({ userName, userId, onSessionEnd }: RayWidgetP
           individual_context: '',
         }
       });
+
+      // If starting in text mode, mute Ray's voice output
+      if (startMode === 'text') {
+        conversation.setVolume({ volume: 0 });
+        setIsMuted(true);
+      }
 
       // 3. Link ElevenLabs conversation ID to our DB row
       const elevenLabsConversationId = (session as any)?.conversationId ?? (conversation as any)?.conversationId;
@@ -111,18 +124,11 @@ export default function RayWidget({ userName, userId, onSessionEnd }: RayWidgetP
     conversationDbIdRef.current = null;
   };
 
-  const toggleMute = async () => {
-    // Note: Actual mute logic depends on SDK version capabilities
-    // For now, we toggle visual state
-    setIsMuted(!isMuted);
-  };
-
   const sendTextMessage = async () => {
     if (!textInput.trim() || status !== 'connected') return;
 
     const userMessage = textInput.trim();
-    // Optimistically add message to UI
-    // setMessages(prev => [...prev, { role: 'user', content: userMessage }]); // SDK onMessage handles this usually
+    setMessages(prev => [...prev, { role: 'user', content: userMessage }]);
     setTextInput('');
 
     try {
@@ -156,42 +162,78 @@ export default function RayWidget({ userName, userId, onSessionEnd }: RayWidgetP
     }
   };
 
+  // Full text mode: hide orb entirely
+  const isTextSession = mode === 'text' && status === 'connected';
+
   return (
     <div className="flex flex-col items-center justify-center w-full max-w-sm mx-auto relative">
 
-      {/* 1. THE INTERFACE (The Orb) */}
-      <div className="mb-12 relative">
-        <AnimatedRayCircle
-          state={getCircleState()}
-          size={220} // Large presence
-          onClick={status === 'connected' ? endConversation : startConversation}
-        />
-        
-        {/* Status Text Floating Below */}
-        <div className="absolute -bottom-16 left-0 right-0 text-center">
-          <p className={`text-xs font-bold uppercase tracking-[0.2em] transition-colors duration-300 ${
-            error ? 'text-destructive' : 'text-warm-grey'
-          }`}>
-            {getStatusText()}
-          </p>
-        </div>
-      </div>
+      {/* 1. THE INTERFACE (The Orb) - hidden during text sessions */}
+      {!isTextSession && (
+        <>
+          <div className="mb-8 relative">
+            <AnimatedRayCircle
+              state={getCircleState()}
+              size={180}
+              onClick={status === 'connected' ? endConversation : () => startConversation('voice')}
+            />
 
-      {/* 2. TEXT CHAT MODE (Overlay) */}
+            {/* Status Text Floating Below */}
+            <div className="absolute -bottom-8 left-0 right-0 text-center">
+              <p className={`text-xs font-bold uppercase tracking-[0.2em] transition-colors duration-300 ${
+                error ? 'text-destructive' : 'text-warm-grey'
+              }`}>
+                {getStatusText()}
+              </p>
+            </div>
+          </div>
+
+          {/* MODE PICKER (Idle State) */}
+          {status !== 'connected' && status !== 'connecting' && (
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="flex items-center gap-4 mt-2"
+            >
+              <button
+                onClick={() => startConversation('voice')}
+                className="flex items-center gap-2 px-5 py-3 bg-white border border-charcoal/10 rounded-sm text-charcoal hover:bg-charcoal/5 transition-all duration-300"
+              >
+                <Mic size={18} strokeWidth={1.5} />
+                <span className="text-xs font-bold uppercase tracking-widest">Voice</span>
+              </button>
+              <button
+                onClick={() => startConversation('text')}
+                className="flex items-center gap-2 px-5 py-3 bg-white border border-charcoal/10 rounded-sm text-charcoal hover:bg-charcoal/5 transition-all duration-300"
+              >
+                <MessageSquare size={18} strokeWidth={1.5} />
+                <span className="text-xs font-bold uppercase tracking-widest">Text</span>
+              </button>
+            </motion.div>
+          )}
+        </>
+      )}
+
+      {/* 2. TEXT CHAT MODE (Full view when text-only, overlay when switched mid-voice) */}
       <AnimatePresence>
-        {mode === 'text' && status === 'connected' && (
+        {isTextSession && (
           <motion.div
             initial={{ opacity: 0, y: 20, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 20, scale: 0.95 }}
-            className="absolute inset-0 z-20 flex flex-col h-[450px] w-full bg-white/90 backdrop-blur-md border border-charcoal/10 rounded-sm shadow-2xl"
+            className="flex flex-col w-full h-[70vh] max-h-[500px] bg-white/90 backdrop-blur-md border border-charcoal/10 rounded-sm shadow-2xl"
           >
             {/* Header */}
             <div className="p-4 border-b border-charcoal/10 flex justify-between items-center bg-linen/50">
               <span className="text-xs font-bold uppercase tracking-widest text-charcoal">Text Mode</span>
-              <button onClick={() => setMode('voice')} className="text-charcoal hover:text-clay transition-colors">
-                <X size={20} strokeWidth={1.5} />
-              </button>
+              <div className="flex items-center gap-3">
+                <button onClick={endConversation} className="text-destructive hover:text-destructive/70 transition-colors" title="End Session">
+                  <PhoneOff size={18} strokeWidth={1.5} />
+                </button>
+                <button onClick={endConversation} className="text-charcoal hover:text-clay transition-colors" title="Close">
+                  <X size={18} strokeWidth={1.5} />
+                </button>
+              </div>
             </div>
 
             {/* Messages Area */}
@@ -244,21 +286,8 @@ export default function RayWidget({ userName, userId, onSessionEnd }: RayWidgetP
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          className="flex items-center gap-6 mt-8"
+          className="flex items-center gap-6 mt-4"
         >
-          {/* Mute Button */}
-          <button
-            onClick={toggleMute}
-            className={`p-4 rounded-full border transition-all duration-300 ${
-              isMuted
-                ? 'bg-destructive/10 border-destructive text-destructive'
-                : 'bg-white border-charcoal/10 text-charcoal hover:bg-charcoal/5'
-            }`}
-            title={isMuted ? "Unmute" : "Mute"}
-          >
-            {isMuted ? <MicOff size={24} strokeWidth={1.5} /> : <Mic size={24} strokeWidth={1.5} />}
-          </button>
-
           {/* Text Mode Toggle */}
           <button
             onClick={() => setMode('text')}
@@ -266,6 +295,23 @@ export default function RayWidget({ userName, userId, onSessionEnd }: RayWidgetP
             title="Switch to Text"
           >
             <MessageSquare size={24} strokeWidth={1.5} />
+          </button>
+
+          {/* Mute Toggle */}
+          <button
+            onClick={() => {
+              const next = !isMuted;
+              setIsMuted(next);
+              conversation.setVolume({ volume: next ? 0 : 1 });
+            }}
+            className={`p-4 rounded-full border transition-all duration-300 ${
+              isMuted
+                ? 'bg-charcoal text-linen border-charcoal'
+                : 'bg-white text-charcoal border-charcoal/10 hover:bg-charcoal/5'
+            }`}
+            title={isMuted ? 'Unmute' : 'Mute'}
+          >
+            {isMuted ? <VolumeX size={24} strokeWidth={1.5} /> : <Volume2 size={24} strokeWidth={1.5} />}
           </button>
 
           {/* End Call Button */}
@@ -279,25 +325,9 @@ export default function RayWidget({ userName, userId, onSessionEnd }: RayWidgetP
         </motion.div>
       )}
 
-      {/* 4. Start Button (Initial State - Optional alternative to tapping circle) */}
-      {status === 'disconnected' && !error && (
-        <motion.div 
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          className="mt-12"
-        >
-          <button
-            onClick={startConversation}
-            className="btn-clay shadow-xl shadow-clay/20"
-          >
-            Begin Session
-          </button>
-        </motion.div>
-      )}
-
-      {/* 5. PRIVACY NOTE (Idle State) */}
-      {status !== 'connected' && (
-        <div className="mt-8 text-center opacity-50 animate-[fadeIn_1s_ease-out]">
+      {/* 4. PRIVACY NOTE (Idle State) */}
+      {status !== 'connected' && status !== 'connecting' && (
+        <div className="mt-4 text-center opacity-50 animate-[fadeIn_1s_ease-out]">
           <p className="text-[10px] text-warm-grey uppercase tracking-widest font-medium">
             Each Session Starts Fresh
           </p>
