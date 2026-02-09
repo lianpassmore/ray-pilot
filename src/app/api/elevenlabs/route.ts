@@ -279,7 +279,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Missing signature' }, { status: 401 });
     }
 
-    const client = new ElevenLabsClient();
+    const client = new ElevenLabsClient({ apiKey: process.env.API_KEY });
     let event;
     try {
       event = await client.webhooks.constructEvent(rawBody, sigHeader, webhookSecret);
