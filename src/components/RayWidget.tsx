@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { useConversation } from '@elevenlabs/react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Mic, PhoneOff, Send, VolumeX, Volume2, MessageSquare } from 'lucide-react';
+import { Mic, PhoneOff, Send, VolumeX, Volume2, MessageSquare, X } from 'lucide-react';
 import AnimatedRayCircle from './AnimatedRayCircle';
 import { createClient } from '@/lib/supabase';
 
@@ -17,6 +17,7 @@ export default function RayWidget({ userName, userId, onSessionEnd }: RayWidgetP
   const [error, setError] = useState<string | null>(null);
   const [mode, setMode] = useState<'voice' | 'text'>('voice');
   const [isMuted, setIsMuted] = useState(false);
+  const [micMuted, setMicMuted] = useState(false);
   const [textInput, setTextInput] = useState('');
   const conversationDbIdRef = useRef<string | null>(null);
   const supabase = createClient();
@@ -25,6 +26,7 @@ export default function RayWidget({ userName, userId, onSessionEnd }: RayWidgetP
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const conversation = useConversation({
+    micMuted,
     onConnect: () => console.log('Ray connected'),
     onDisconnect: () => console.log('Ray disconnected'),
     onError: (err) => {
@@ -87,9 +89,11 @@ export default function RayWidget({ userName, userId, onSessionEnd }: RayWidgetP
       if (startMode === 'text') {
         conversation.setVolume({ volume: 0 });
         setIsMuted(true);
+        setMicMuted(true);
       } else {
         conversation.setVolume({ volume: 1 });
         setIsMuted(false);
+        setMicMuted(false);
       }
 
       setTimeout(async () => {
@@ -224,6 +228,7 @@ export default function RayWidget({ userName, userId, onSessionEnd }: RayWidgetP
                     setMode('text');
                     conversation.setVolume({ volume: 0 });
                     setIsMuted(true);
+                    setMicMuted(true);
                   }}
                   className="p-3 rounded-full bg-transparent border border-charcoal/15 text-charcoal/60 hover:text-charcoal hover:border-charcoal/30 transition-all"
                   title="Switch to Text"
@@ -282,6 +287,7 @@ export default function RayWidget({ userName, userId, onSessionEnd }: RayWidgetP
                     setMode('voice');
                     conversation.setVolume({ volume: 1 });
                     setIsMuted(false);
+                    setMicMuted(false);
                   }}
                   className="p-2 text-charcoal/50 hover:text-charcoal rounded-sm transition-colors"
                   title="Switch to Voice"
@@ -293,7 +299,7 @@ export default function RayWidget({ userName, userId, onSessionEnd }: RayWidgetP
                   className="p-2 text-charcoal/50 hover:text-destructive rounded-sm transition-colors"
                   title="End Session"
                 >
-                  <PhoneOff size={16} strokeWidth={1.5} />
+                  <X size={16} strokeWidth={1.5} />
                 </button>
               </div>
             </div>
