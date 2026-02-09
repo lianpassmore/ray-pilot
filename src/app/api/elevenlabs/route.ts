@@ -294,9 +294,22 @@ export async function POST(request: Request) {
 
     // 1. Scan for Crisis Keywords (Simple heuristic for MVP)
     const crisisKeywords = [
-      'suicide', 'kill myself', 'want to die', 'end it all',
+      // Direct suicidal ideation
+      'suicide', 'kill myself', 'want to die', 'end it all', 'end my life',
+      'take my life', 'not worth living', 'better off dead',
+      // Indirect suicidal ideation
+      'better off not here', 'better off without me', 'do something stupid',
+      'don\'t want to be here', "don't want to be here",
+      'not sure i won\'t', "not sure i won't", 'can\'t go on', "can't go on",
+      'no reason to live', 'nothing to live for', 'want it to stop',
+      'disappear', 'not wake up', 'go to sleep forever',
+      // Self-harm
+      'hurt myself', 'harm myself', 'cutting myself',
+      // Violence / DV
       'hit me', 'beat me', 'hurt me', 'scared of him', 'scared of her',
-      'weapon', 'gun', 'knife'
+      'he hits', 'she hits', 'choke', 'strangle',
+      // Weapons
+      'weapon', 'gun', 'knife',
     ];
 
     // Convert transcript to string for scanning
@@ -333,7 +346,7 @@ export async function POST(request: Request) {
       });
 
       // 3. Email Researcher (You)
-      await resend.emails.send({
+      const emailResult = await resend.emails.send({
         from: process.env.SAFETY_EMAIL_FROM || 'Ray Safety <onboarding@resend.dev>',
         to: process.env.RESEARCHER_EMAIL!,
         subject: `⚠️ CRISIS DETECTED in Ray Session`,
@@ -346,6 +359,9 @@ export async function POST(request: Request) {
           <p>Please review the transcript in ElevenLabs dashboard immediately.</p>
         `
       });
+      console.log('Crisis email sent:', JSON.stringify(emailResult));
+    } else {
+      console.log('No crisis keywords detected in transcript');
     }
 
     return NextResponse.json({ status: 'processed' });
