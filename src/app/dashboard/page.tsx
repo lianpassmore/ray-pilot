@@ -123,7 +123,7 @@ export default function Dashboard() {
           </p>
         )}
         <p className="text-[10px] text-warm-grey uppercase tracking-widest font-medium opacity-40">
-          Each session starts fresh
+          Every session starts fresh
         </p>
       </div>
 
@@ -159,7 +159,7 @@ export default function Dashboard() {
                   About Ray
                 </h3>
                 <p className="text-sm text-charcoal/80 leading-relaxed">
-                  A space for honest conversations about relationships. Not therapy. Not advice. Just a thinking partner.
+                  I'm a thinking partner. Not a therapist. Not a cheerleader. Conversations start fresh every time.
                 </p>
                 <a href="https://ray-research-info.vercel.app/" target="_blank" rel="noopener noreferrer" className="text-xs font-bold underline text-clay">Read More</a>
               </div>

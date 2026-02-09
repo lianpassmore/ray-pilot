@@ -43,7 +43,7 @@ export default function ConsentPage() {
           <section>
             <h3 className="font-bold text-charcoal uppercase tracking-wider text-sm mb-3">What you're joining</h3>
             <p className="body-text text-sm">
-              Ray is an AI relationship coach designed to help you see patterns in any relationship: romantic, family, friendships, work, or even the one you have with yourself.
+              I'm an AI relationship coach designed to help you see patterns in any relationship: romantic, family, friendships, work, or even the one you have with yourself.
             </p>
           </section>
 
@@ -71,10 +71,10 @@ export default function ConsentPage() {
             <h3 className="font-bold text-charcoal uppercase tracking-wider text-sm mb-3">Important Limits</h3>
             <div className="bg-charcoal/5 p-4 rounded-sm border-l-4 border-forest">
               <ul className="space-y-2 text-sm text-charcoal font-medium">
-                <li>• Ray is coaching, not therapy.</li>
-                <li>• Ray is not crisis intervention.</li>
+                <li>• I'm coaching, not therapy.</li>
+                <li>• I'm not crisis intervention.</li>
                 <li>• Sessions are capped at 1 hour.</li>
-                <li>• Ray has no memory of previous sessions (Fresh start every time).</li>
+                <li>• I have no memory of previous sessions (Fresh start every time).</li>
               </ul>
             </div>
           </section>

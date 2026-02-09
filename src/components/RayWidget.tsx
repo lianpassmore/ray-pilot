@@ -106,7 +106,7 @@ export default function RayWidget({ userName, userId, onSessionEnd }: RayWidgetP
 
     } catch (err) {
       console.error('Failed to start:', err);
-      setError('Ray is unavailable right now.');
+      setError('I\'m currently unavailable.');
     }
   }, [conversation, userName, userId, getAccessToken]);
 
@@ -161,7 +161,7 @@ export default function RayWidget({ userName, userId, onSessionEnd }: RayWidgetP
     if (error) return error;
     switch (status) {
       case 'connecting': return 'Connecting...';
-      case 'connected': return isSpeaking ? 'Ray is speaking' : 'Ray is listening';
+      case 'connected': return isSpeaking ? 'I\'m speaking' : 'I\'m listening';
       default: return 'Tap to begin';
     }
   };

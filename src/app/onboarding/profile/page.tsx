@@ -87,7 +87,7 @@ export default function ProfilePage() {
       <div className="mb-10 animate-[fadeIn_0.6s_ease-out]">
         <h1 className="heading-xl">About you.</h1>
         <p className="body-text mt-4 text-warm-grey">
-          This data is for research analysis only. Only your name is shared with Ray.
+          This data is for research analysis only. I don't see this.
         </p>
       </div>
 
@@ -96,7 +96,7 @@ export default function ProfilePage() {
         {/* SECTION 1: BASICS */}
         <section className="space-y-6">
           <div>
-            <label className="label-sm mb-2 block">What should Ray call you?</label>
+            <label className="label-sm mb-2 block">What should I call you?</label>
             <input
               type="text"
               className="input-field"
