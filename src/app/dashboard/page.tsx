@@ -145,7 +145,7 @@ export default function Dashboard() {
             className="absolute inset-0 bg-charcoal/20 backdrop-blur-[2px] transition-opacity"
             onClick={() => setIsMenuOpen(false)}
           />
-          <div className="relative w-full max-w-xs h-full bg-linen/95 backdrop-blur-xl p-8 flex flex-col shadow-2xl animate-[slideIn_0.3s_ease-out] border-l border-charcoal/5">
+          <div className="relative w-full max-w-xs h-full bg-linen/95 backdrop-blur-xl px-6 py-8 flex flex-col shadow-2xl animate-[slideIn_0.3s_ease-out] border-l border-charcoal/5 overflow-hidden">
             <div className="flex justify-between items-center mb-10">
               <span className="text-[10px] font-bold uppercase tracking-widest text-warm-grey">Menu</span>
               <button onClick={() => setIsMenuOpen(false)} className="text-charcoal hover:text-clay transition-colors">
@@ -169,17 +169,17 @@ export default function Dashboard() {
                   <Phone size={14} /> Crisis Support
                 </h3>
                 <ul className="space-y-3">
-                  <li className="flex justify-between items-center text-sm border-b border-charcoal/5 pb-2">
-                    <span>1737 (Mental Health)</span>
-                    <a href="tel:1737" className="text-xs font-bold uppercase tracking-wider bg-charcoal text-linen px-3 py-1 rounded-sm hover:bg-clay transition-colors">Call</a>
+                  <li className="flex justify-between items-center gap-3 text-sm border-b border-charcoal/5 pb-2">
+                    <span className="truncate">1737 (Mental Health)</span>
+                    <a href="tel:1737" className="shrink-0 text-xs font-bold uppercase tracking-wider bg-charcoal text-linen px-3 py-1 rounded-sm hover:bg-clay transition-colors">Call</a>
                   </li>
-                  <li className="flex justify-between items-center text-sm border-b border-charcoal/5 pb-2">
-                    <span>Women's Refuge</span>
-                    <a href="tel:0800733843" className="text-xs font-bold uppercase tracking-wider border border-charcoal text-charcoal px-3 py-1 rounded-sm hover:bg-charcoal hover:text-linen transition-colors">Call</a>
+                  <li className="flex justify-between items-center gap-3 text-sm border-b border-charcoal/5 pb-2">
+                    <span className="truncate">Women's Refuge</span>
+                    <a href="tel:0800733843" className="shrink-0 text-xs font-bold uppercase tracking-wider border border-charcoal text-charcoal px-3 py-1 rounded-sm hover:bg-charcoal hover:text-linen transition-colors">Call</a>
                   </li>
-                  <li className="flex justify-between items-center text-sm border-b border-charcoal/5 pb-2">
-                    <span>Emergency (111)</span>
-                    <a href="tel:111" className="text-xs font-bold uppercase tracking-wider bg-destructive text-white px-3 py-1 rounded-sm hover:bg-destructive/80 transition-colors">Call</a>
+                  <li className="flex justify-between items-center gap-3 text-sm border-b border-charcoal/5 pb-2">
+                    <span className="truncate">Emergency (111)</span>
+                    <a href="tel:111" className="shrink-0 text-xs font-bold uppercase tracking-wider bg-destructive text-white px-3 py-1 rounded-sm hover:bg-destructive/80 transition-colors">Call</a>
                   </li>
                 </ul>
               </div>

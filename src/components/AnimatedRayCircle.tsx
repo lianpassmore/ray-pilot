@@ -157,12 +157,11 @@ export default function AnimatedRayCircle({
     >
       {/* 1. ATMOSPHERE (Outer Glow) */}
       <motion.div
-        className="absolute rounded-full blur-2xl"
+        className="absolute rounded-full"
         style={{
-          width: size,
-          height: size,
-          background: accentHex,
-          opacity: 0.2,
+          width: size * 1.2,
+          height: size * 1.2,
+          background: `radial-gradient(circle, ${accentHex}33 0%, ${accentHex}11 40%, transparent 70%)`,
         }}
         animate={{ scale: state === "speaking" ? 1.2 : 1 }}
       />

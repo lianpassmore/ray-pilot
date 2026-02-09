@@ -22,6 +22,11 @@
 }
 
 /* BASE STYLES */
+html, body {
+  overflow-x: hidden;
+  width: 100%;
+}
+
 body {
   background-color: var(--color-linen);
   color: var(--color-charcoal);
