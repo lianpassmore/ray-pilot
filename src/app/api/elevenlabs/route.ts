@@ -2,7 +2,6 @@ import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { Resend } from 'resend';
 import { ElevenLabsClient } from '@elevenlabs/elevenlabs-js';
-import { createServerClient } from '@/lib/supabase-server';
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -27,10 +26,12 @@ function parseDevice(userAgent: string) {
   return { deviceType, browser };
 }
 
-// Helper: verify authenticated user and return their ID
-async function getAuthenticatedUser() {
-  const supabaseAuth = await createServerClient();
-  const { data: { user } } = await supabaseAuth.auth.getUser();
+// Helper: verify authenticated user from Authorization header
+async function getAuthenticatedUser(request: Request) {
+  const authHeader = request.headers.get('authorization');
+  if (!authHeader?.startsWith('Bearer ')) return null;
+  const token = authHeader.slice(7);
+  const { data: { user } } = await supabase.auth.getUser(token);
   return user;
 }
 
@@ -38,7 +39,7 @@ async function getAuthenticatedUser() {
 export async function GET(request: Request) {
   try {
     // Verify authenticated user
-    const user = await getAuthenticatedUser();
+    const user = await getAuthenticatedUser(request);
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
@@ -159,7 +160,7 @@ export async function GET(request: Request) {
 export async function PATCH(request: Request) {
   try {
     // Verify authenticated user
-    const user = await getAuthenticatedUser();
+    const user = await getAuthenticatedUser(request);
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
@@ -197,7 +198,7 @@ export async function PATCH(request: Request) {
 export async function PUT(request: Request) {
   try {
     // Verify authenticated user
-    const user = await getAuthenticatedUser();
+    const user = await getAuthenticatedUser(request);
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }

@@ -5,6 +5,7 @@ import { useConversation } from '@elevenlabs/react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Mic, PhoneOff, Send, VolumeX, Volume2, MessageSquare } from 'lucide-react';
 import AnimatedRayCircle from './AnimatedRayCircle';
+import { createClient } from '@/lib/supabase';
 
 interface RayWidgetProps {
   userName: string;
@@ -18,6 +19,7 @@ export default function RayWidget({ userName, userId, onSessionEnd }: RayWidgetP
   const [isMuted, setIsMuted] = useState(false);
   const [textInput, setTextInput] = useState('');
   const conversationDbIdRef = useRef<string | null>(null);
+  const supabase = createClient();
 
   const [messages, setMessages] = useState<Array<{ role: 'user' | 'agent'; content: string }>>([]);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -52,12 +54,22 @@ export default function RayWidget({ userName, userId, onSessionEnd }: RayWidgetP
 
   // --- ACTIONS ---
 
+  const getAccessToken = useCallback(async () => {
+    const { data: { session } } = await supabase.auth.getSession();
+    return session?.access_token;
+  }, [supabase]);
+
   const startConversation = useCallback(async (startMode: 'voice' | 'text' = 'voice') => {
     try {
       setError(null);
       setMode(startMode);
 
-      const response = await fetch(`/api/elevenlabs?name=${encodeURIComponent(userName)}&userId=${encodeURIComponent(userId)}`);
+      const token = await getAccessToken();
+      if (!token) throw new Error("Not authenticated");
+
+      const response = await fetch(`/api/elevenlabs?name=${encodeURIComponent(userName)}&userId=${encodeURIComponent(userId)}`, {
+        headers: { 'Authorization': `Bearer ${token}` },
+      });
       if (!response.ok) throw new Error("Connection failed");
 
       const { signedUrl, conversationDbId, sessionNumber, sessionType } = await response.json();
@@ -80,12 +92,13 @@ export default function RayWidget({ userName, userId, onSessionEnd }: RayWidgetP
         setIsMuted(false);
       }
 
-      setTimeout(() => {
+      setTimeout(async () => {
         const elId = conversation.getId();
         if (elId && conversationDbId) {
+          const t = await getAccessToken();
           fetch('/api/elevenlabs', {
             method: 'PATCH',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${t}` },
             body: JSON.stringify({ conversationDbId, elevenLabsConversationId: elId }),
           }).catch(console.error);
         }
@@ -95,7 +108,7 @@ export default function RayWidget({ userName, userId, onSessionEnd }: RayWidgetP
       console.error('Failed to start:', err);
       setError('Ray is unavailable right now.');
     }
-  }, [conversation, userName, userId]);
+  }, [conversation, userName, userId, getAccessToken]);
 
   const endConversation = async () => {
     const dbId = conversationDbIdRef.current;
@@ -103,9 +116,10 @@ export default function RayWidget({ userName, userId, onSessionEnd }: RayWidgetP
 
     if (dbId) {
       try {
+        const token = await getAccessToken();
         await fetch('/api/elevenlabs', {
           method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
           body: JSON.stringify({ conversationDbId: dbId }),
         });
       } catch (err) {

@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { X } from 'lucide-react';
+import { createClient } from '@/lib/supabase';
 
 interface FeedbackFormProps {
   conversationDbId: string;
@@ -59,9 +60,11 @@ export default function FeedbackForm({ conversationDbId, userId, onComplete }: F
   const handleSubmit = async () => {
     setSubmitting(true);
     try {
+      const supabase = createClient();
+      const { data: { session } } = await supabase.auth.getSession();
       await fetch('/api/feedback', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session?.access_token}` },
         body: JSON.stringify({
           conversation_id: conversationDbId,
           user_id: userId,

@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
-import { createServerClient } from '@/lib/supabase-server';
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -9,9 +8,12 @@ const supabase = createClient(
 
 export async function POST(request: Request) {
   try {
-    // 1. Verify authenticated user
-    const supabaseAuth = await createServerClient();
-    const { data: { user } } = await supabaseAuth.auth.getUser();
+    // 1. Verify authenticated user via Bearer token
+    const authHeader = request.headers.get('authorization');
+    if (!authHeader?.startsWith('Bearer ')) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+    const { data: { user } } = await supabase.auth.getUser(authHeader.slice(7));
 
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
