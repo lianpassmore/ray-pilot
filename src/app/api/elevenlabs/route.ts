@@ -415,17 +415,19 @@ export async function POST(request: Request) {
     }
 
     // 3. Log every conversation with risk assessment
+    let incidentId: string | null = null;
     if (riskLevel !== 'low' || allMatched.length > 0) {
-      await supabase.from('crisis_incidents').insert({
+      const { data: incident } = await supabase.from('crisis_incidents').insert({
         trigger_type: allMatched[0] || null,
         user_message: userMessages.substring(0, 2000),
         conversation_id: dbConversationId,
         user_id: visibleUserId,
-        researcher_notified_at: riskLevel !== 'low' ? new Date().toISOString() : null,
+        researcher_notified_at: null,
         status: 'pending',
         risk_level: riskLevel,
         risk_reasons: riskReasons,
-      });
+      }).select('id').single();
+      incidentId = incident?.id ?? null;
     }
 
     // 4. Email for medium and high only
@@ -454,7 +456,30 @@ export async function POST(request: Request) {
           <p><strong>Action:</strong> Review transcript in ElevenLabs dashboard immediately.</p>
         `
       });
+
+      if (emailResult.error) {
+        console.error(`CRITICAL: Crisis email FAILED for ${riskLevel} risk conversation ${conversationId}:`, JSON.stringify(emailResult.error));
+
+        // Mark the incident so failed notifications are identifiable
+        if (incidentId) {
+          await supabase.from('crisis_incidents').update({
+            status: 'email_failed',
+          }).eq('id', incidentId);
+        }
+
+        return NextResponse.json(
+          { error: 'Crisis detected but email notification failed', riskLevel },
+          { status: 500 }
+        );
+      }
+
+      // Email succeeded — update incident with notification timestamp
       console.log('Crisis email sent:', JSON.stringify(emailResult));
+      if (incidentId) {
+        await supabase.from('crisis_incidents').update({
+          researcher_notified_at: new Date().toISOString(),
+        }).eq('id', incidentId);
+      }
     }
 
     return NextResponse.json({ status: 'processed' });
