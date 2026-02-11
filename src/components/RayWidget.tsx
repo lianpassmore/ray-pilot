@@ -223,9 +223,12 @@ export default function RayWidget({ userName, userId, profile, onSessionEnd }: R
 
             {/* Status Text */}
             <div className="mt-8 text-center h-6">
-              <p className={`text-[10px] font-bold uppercase tracking-[0.2em] transition-colors duration-300 ${
-                error ? 'text-destructive' : 'text-warm-grey'
-              }`}>
+              <p
+                className={`text-[10px] font-bold uppercase tracking-[0.2em] transition-colors duration-300 ${
+                  error ? 'text-destructive' : 'text-warm-grey'
+                } ${isIdle ? 'cursor-pointer hover:text-charcoal' : ''}`}
+                onClick={isIdle ? () => startConversation('voice') : undefined}
+              >
                 {getStatusText()}
               </p>
             </div>
