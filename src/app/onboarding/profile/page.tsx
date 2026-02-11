@@ -228,7 +228,12 @@ export default function ProfilePage() {
                     <div className="w-5 h-5 border border-charcoal/30 rounded-[2px] peer-checked:bg-forest-green peer-checked:border-forest-green transition-all"></div>
                     <svg className="absolute w-3 h-3 text-linen opacity-0 peer-checked:opacity-100 left-1 top-1 transition-opacity pointer-events-none" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
                   </div>
-                  <span className="text-sm text-charcoal/80 group-hover:text-charcoal transition-colors">{opt}</span>
+                  <span className="text-sm text-charcoal/80 group-hover:text-charcoal transition-colors">
+                    {opt}
+                    {opt === 'Digitally Excluded' && (
+                      <span className="text-xs text-warm-grey ml-1">(limited access to internet, devices, or digital skills)</span>
+                    )}
+                  </span>
                 </label>
               ))}
             </div>
