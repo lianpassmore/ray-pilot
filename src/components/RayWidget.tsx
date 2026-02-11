@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { useConversation } from '@elevenlabs/react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Mic, PhoneOff, Send, VolumeX, Volume2, MessageSquare, X } from 'lucide-react';
+import { Mic, MicOff, PhoneOff, Send, MessageSquare, X } from 'lucide-react';
 import AnimatedRayCircle from './AnimatedRayCircle';
 import { createClient } from '@/lib/supabase';
 
@@ -109,7 +109,7 @@ export default function RayWidget({ userName, userId, profile, onSessionEnd }: R
           session_type: sessionType,
           user_context: userContext || 'No personal context provided yet.',
           days_since_last_session: daysSinceLastSession != null ? String(daysSinceLastSession) : 'first session',
-          last_session_date: lastSessionDate ? new Date(lastSessionDate).toLocaleDateString('en-NZ', { weekday: 'long', day: 'numeric', month: 'long' }) : 'N/A',
+          last_session_date: lastSessionDate ? new Date(lastSessionDate).toLocaleDateString('en-NZ', { timeZone: 'Pacific/Auckland', weekday: 'long', day: 'numeric', month: 'long' }) : 'N/A',
         }
       });
 
@@ -264,19 +264,15 @@ export default function RayWidget({ userName, userId, profile, onSessionEnd }: R
                 </button>
 
                 <button
-                  onClick={() => {
-                    const next = !isMuted;
-                    setIsMuted(next);
-                    conversation.setVolume({ volume: next ? 0 : 1 });
-                  }}
+                  onClick={() => setMicMuted(!micMuted)}
                   className={`p-3 rounded-full border transition-all duration-300 ${
-                    isMuted
+                    micMuted
                       ? 'bg-charcoal text-linen border-charcoal'
                       : 'bg-transparent text-charcoal/60 border-charcoal/15 hover:text-charcoal hover:border-charcoal/30'
                   }`}
-                  title={isMuted ? 'Unmute Ray' : 'Mute Ray'}
+                  title={micMuted ? 'Unmute Mic' : 'Mute Mic'}
                 >
-                  {isMuted ? <VolumeX size={18} strokeWidth={1.5} /> : <Volume2 size={18} strokeWidth={1.5} />}
+                  {micMuted ? <MicOff size={18} strokeWidth={1.5} /> : <Mic size={18} strokeWidth={1.5} />}
                 </button>
 
                 <button

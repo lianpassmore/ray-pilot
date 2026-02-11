@@ -47,7 +47,7 @@ export default function Dashboard() {
   }, [])
 
   useEffect(() => {
-    const targetDate = new Date('2026-02-12T09:00:00+13:00').getTime()
+    const targetDate = new Date('2026-02-12T00:00:00+13:00').getTime()
     const endDate = new Date('2026-02-26T23:59:00+13:00').getTime()
     const timer = setInterval(() => {
       const now = new Date().getTime()

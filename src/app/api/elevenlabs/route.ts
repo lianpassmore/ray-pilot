@@ -115,7 +115,7 @@ export async function GET(request: Request) {
     }
 
     // Determine session type and compute days since last session
-    const FINAL_REVIEW_DATE = new Date('2026-02-26T00:00:00');
+    const FINAL_REVIEW_DATE = new Date('2026-02-26T00:00:00+13:00');
     const now = new Date();
     let sessionType = 'returning';
     let daysSinceLastSession: number | null = null;
@@ -143,11 +143,12 @@ export async function GET(request: Request) {
         lastSessionDate = lastDate.toISOString();
         daysSinceLastSession = Math.floor((now.getTime() - lastDate.getTime()) / (1000 * 60 * 60 * 24));
 
+        const nzFormatter = new Intl.DateTimeFormat('en-NZ', { timeZone: 'Pacific/Auckland', year: 'numeric', month: '2-digit', day: '2-digit' });
+        const lastDateNZ = nzFormatter.format(lastDate);
+        const nowNZ = nzFormatter.format(now);
         if (
           sessionType === 'returning' &&
-          lastDate.getFullYear() === now.getFullYear() &&
-          lastDate.getMonth() === now.getMonth() &&
-          lastDate.getDate() === now.getDate()
+          lastDateNZ === nowNZ
         ) {
           sessionType = 'returning_same_day';
         }
@@ -456,7 +457,7 @@ export async function POST(request: Request) {
           <p><strong>Soft Triggers:</strong> ${matchedSoft.length > 0 ? matchedSoft.map(t => `"${t}"`).join(', ') : 'None'}</p>
           <p><strong>Planning Words:</strong> ${matchedPlanning.length > 0 ? matchedPlanning.map(t => `"${t}"`).join(', ') : 'None'}</p>
           <p><strong>Conversation ID:</strong> ${conversationId}</p>
-          <p><strong>Time:</strong> ${new Date().toLocaleString()}</p>
+          <p><strong>Time:</strong> ${new Date().toLocaleString('en-NZ', { timeZone: 'Pacific/Auckland' })}</p>
           <hr />
           <h3>User Messages</h3>
           <p style="background:#f5f5f5;padding:12px;border-radius:4px;white-space:pre-wrap;">${userMessages.substring(0, 2000)}</p>
