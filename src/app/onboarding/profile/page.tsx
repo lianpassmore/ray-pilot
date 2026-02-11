@@ -72,7 +72,7 @@ export default function ProfilePage() {
           setLoading(false)
           return
         }
-        router.push('/dashboard')
+        router.push('/onboarding/context')
       }
     } catch (error) {
       alert('An error occurred. Please try again.')
@@ -96,7 +96,7 @@ export default function ProfilePage() {
         {/* SECTION 1: BASICS */}
         <section className="space-y-6">
           <div>
-            <label className="label-sm mb-2 block">What should I call you?</label>
+            <label className="label-sm mb-2 block">What should I call you? <span className="text-clay">*</span></label>
             <input
               type="text"
               className="input-field"
@@ -107,7 +107,7 @@ export default function ProfilePage() {
           </div>
 
           <div>
-            <label className="label-sm mb-2 block">Phone</label>
+            <label className="label-sm mb-2 block">Phone <span className="text-clay">*</span></label>
             <input
               type="tel"
               className="input-field"

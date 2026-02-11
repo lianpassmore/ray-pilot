@@ -73,7 +73,7 @@ export default function ConsentPage() {
               <ul className="space-y-2 text-sm text-charcoal font-medium">
                 <li>• I'm coaching, not therapy.</li>
                 <li>• I'm not crisis intervention.</li>
-                <li>• Sessions are capped at 1 hour.</li>
+                <li>• Sessions are capped at 45 minutes.</li>
                 <li>• I have no memory of previous sessions (Fresh start every time).</li>
               </ul>
             </div>

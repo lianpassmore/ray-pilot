@@ -126,7 +126,7 @@ export default function Dashboard() {
           </p>
         )}
         <p className="text-[10px] text-warm-grey uppercase tracking-widest font-medium opacity-40">
-          Conversations are private &amp; not stored
+          Conversations are private &amp; encrypted
         </p>
       </div>
 

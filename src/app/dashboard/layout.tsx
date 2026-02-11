@@ -24,7 +24,7 @@ export default function DashboardLayout({
       // Check if profile exists and has display name
       const { data: profile } = await supabase
         .from('profiles')
-        .select('display_name, consent_agreed')
+        .select('*')
         .eq('id', user.id)
         .single()
 
@@ -32,6 +32,8 @@ export default function DashboardLayout({
         router.push('/onboarding/consent')
       } else if (!profile?.display_name) {
         router.push('/onboarding/profile')
+      } else if (!profile?.onboarding_context_completed) {
+        router.push('/onboarding/context')
       }
       
       setLoading(false)
