@@ -1,10 +1,11 @@
 'use client'
 import { useState, useEffect, useCallback } from 'react'
 import { createClient } from '@/lib/supabase'
-import { X, Phone, LogOut } from 'lucide-react'
+import { X, Phone, LogOut, User } from 'lucide-react'
 import RayWidget from '@/components/RayWidget'
 import FeedbackForm from '@/components/FeedbackForm'
 import HeaderIcons from '@/components/HeaderIcons'
+import MyContextForm from '@/components/MyContextForm'
 import { useRouter } from 'next/navigation'
 import { AnimatePresence, motion } from 'framer-motion'
 
@@ -17,6 +18,7 @@ export default function Dashboard() {
   const router = useRouter()
 
   const [showFeedback, setShowFeedback] = useState(false)
+  const [showMyContext, setShowMyContext] = useState(false)
   const [currentConversationDbId, setCurrentConversationDbId] = useState<string | null>(null)
   const [userId, setUserId] = useState<string | null>(null)
 
@@ -109,6 +111,7 @@ export default function Dashboard() {
           <RayWidget
             userName={profile.display_name}
             userId={userId!}
+            profile={profile}
             onSessionEnd={handleSessionEnd}
           />
         </motion.div>
@@ -123,7 +126,7 @@ export default function Dashboard() {
           </p>
         )}
         <p className="text-[10px] text-warm-grey uppercase tracking-widest font-medium opacity-40">
-          Every session starts fresh
+          Conversations are private &amp; not stored
         </p>
       </div>
 
@@ -134,6 +137,22 @@ export default function Dashboard() {
             conversationDbId={currentConversationDbId}
             userId={userId}
             onComplete={handleFeedbackComplete}
+          />
+        )}
+      </AnimatePresence>
+
+      {/* --- MY CONTEXT FORM --- */}
+      <AnimatePresence>
+        {showMyContext && userId && (
+          <MyContextForm
+            userId={userId}
+            onClose={() => {
+              setShowMyContext(false)
+              // Refresh profile to pick up changes for next session
+              supabase.from('profiles').select('*').eq('id', userId).single().then(({ data }) => {
+                if (data) setProfile(data)
+              })
+            }}
           />
         )}
       </AnimatePresence>
@@ -154,6 +173,17 @@ export default function Dashboard() {
             </div>
 
             <div className="space-y-10 flex-1 overflow-y-auto no-scrollbar">
+              <button
+                onClick={() => { setIsMenuOpen(false); setShowMyContext(true) }}
+                className="w-full flex items-center gap-3 p-3 rounded-sm bg-white/50 border border-charcoal/10 hover:border-charcoal/20 transition-all text-left group"
+              >
+                <User size={16} strokeWidth={1.5} className="text-clay shrink-0" />
+                <div>
+                  <p className="text-xs font-bold uppercase tracking-widest text-charcoal">Help Ray know you</p>
+                  <p className="text-[11px] text-warm-grey mt-0.5">Share context so Ray can get into it faster</p>
+                </div>
+              </button>
+
               <div className="space-y-3">
                 <h3 className="text-xs font-bold uppercase tracking-widest text-charcoal">
                   About Ray

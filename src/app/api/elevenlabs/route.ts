@@ -114,17 +114,21 @@ export async function GET(request: Request) {
       conversationDbId = convo?.id ?? null;
     }
 
-    // Determine session type for agent opening protocol
+    // Determine session type and compute days since last session
     const FINAL_REVIEW_DATE = new Date('2026-02-26T00:00:00');
     const now = new Date();
     let sessionType = 'returning';
+    let daysSinceLastSession: number | null = null;
+    let lastSessionDate: string | null = null;
 
     if (sessionNumber === 1) {
       sessionType = 'first_time';
     } else if (now >= FINAL_REVIEW_DATE) {
       sessionType = 'final_review';
-    } else if (userId) {
-      // Check if user already had a session today
+    }
+
+    if (userId && sessionNumber > 1) {
+      // Get last completed session
       const { data: lastConvo } = await supabase
         .from('conversations')
         .select('ended_at')
@@ -136,7 +140,11 @@ export async function GET(request: Request) {
 
       if (lastConvo?.ended_at) {
         const lastDate = new Date(lastConvo.ended_at);
+        lastSessionDate = lastDate.toISOString();
+        daysSinceLastSession = Math.floor((now.getTime() - lastDate.getTime()) / (1000 * 60 * 60 * 24));
+
         if (
+          sessionType === 'returning' &&
           lastDate.getFullYear() === now.getFullYear() &&
           lastDate.getMonth() === now.getMonth() &&
           lastDate.getDate() === now.getDate()
@@ -146,7 +154,7 @@ export async function GET(request: Request) {
       }
     }
 
-    return NextResponse.json({ signedUrl: data.signed_url, conversationDbId, sessionNumber, sessionType });
+    return NextResponse.json({ signedUrl: data.signed_url, conversationDbId, sessionNumber, sessionType, daysSinceLastSession, lastSessionDate });
   } catch (error) {
     console.error('Error generating signed URL:', error);
     return NextResponse.json(

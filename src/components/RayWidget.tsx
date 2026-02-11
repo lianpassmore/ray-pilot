@@ -7,13 +7,35 @@ import { Mic, PhoneOff, Send, VolumeX, Volume2, MessageSquare, X } from 'lucide-
 import AnimatedRayCircle from './AnimatedRayCircle';
 import { createClient } from '@/lib/supabase';
 
+interface ProfileData {
+  relationship_status?: string | null;
+  partner_name?: string | null;
+  children_info?: string | null;
+  occupation?: string | null;
+  living_situation?: string | null;
+  additional_context?: string | null;
+}
+
 interface RayWidgetProps {
   userName: string;
   userId: string;
+  profile?: ProfileData;
   onSessionEnd?: (conversationDbId: string) => void;
 }
 
-export default function RayWidget({ userName, userId, onSessionEnd }: RayWidgetProps) {
+function buildUserContext(profile?: ProfileData): string {
+  if (!profile) return '';
+  const parts: string[] = [];
+  if (profile.relationship_status) parts.push(`Relationship status: ${profile.relationship_status}`);
+  if (profile.partner_name) parts.push(`Partner's name: ${profile.partner_name}`);
+  if (profile.children_info) parts.push(`Children: ${profile.children_info}`);
+  if (profile.occupation) parts.push(`Occupation: ${profile.occupation}`);
+  if (profile.living_situation) parts.push(`Living situation: ${profile.living_situation}`);
+  if (profile.additional_context) parts.push(`Additional context: ${profile.additional_context}`);
+  return parts.join('. ');
+}
+
+export default function RayWidget({ userName, userId, profile, onSessionEnd }: RayWidgetProps) {
   const [error, setError] = useState<string | null>(null);
   const [mode, setMode] = useState<'voice' | 'text'>('voice');
   const [isMuted, setIsMuted] = useState(false);
@@ -74,8 +96,10 @@ export default function RayWidget({ userName, userId, onSessionEnd }: RayWidgetP
       });
       if (!response.ok) throw new Error("Connection failed");
 
-      const { signedUrl, conversationDbId, sessionNumber, sessionType } = await response.json();
+      const { signedUrl, conversationDbId, sessionNumber, sessionType, daysSinceLastSession, lastSessionDate } = await response.json();
       conversationDbIdRef.current = conversationDbId;
+
+      const userContext = buildUserContext(profile);
 
       await conversation.startSession({
         signedUrl: signedUrl,
@@ -83,6 +107,9 @@ export default function RayWidget({ userName, userId, onSessionEnd }: RayWidgetP
           user_name: userName,
           session_number: String(sessionNumber),
           session_type: sessionType,
+          user_context: userContext || 'No personal context provided yet.',
+          days_since_last_session: daysSinceLastSession != null ? String(daysSinceLastSession) : 'first session',
+          last_session_date: lastSessionDate ? new Date(lastSessionDate).toLocaleDateString('en-NZ', { weekday: 'long', day: 'numeric', month: 'long' }) : 'N/A',
         }
       });
 
@@ -112,7 +139,7 @@ export default function RayWidget({ userName, userId, onSessionEnd }: RayWidgetP
       console.error('Failed to start:', err);
       setError('I\'m currently unavailable.');
     }
-  }, [conversation, userName, userId, getAccessToken]);
+  }, [conversation, userName, userId, profile, getAccessToken]);
 
   const endConversation = async () => {
     const dbId = conversationDbIdRef.current;
