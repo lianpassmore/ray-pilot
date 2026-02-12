@@ -6,6 +6,7 @@ import RayWidget from '@/components/RayWidget'
 import FeedbackForm from '@/components/FeedbackForm'
 import HeaderIcons from '@/components/HeaderIcons'
 import MyContextForm from '@/components/MyContextForm'
+import PilotUpdateBanner from '@/components/PilotUpdateBanner'
 import { useRouter } from 'next/navigation'
 import { AnimatePresence, motion } from 'framer-motion'
 
@@ -129,6 +130,9 @@ export default function Dashboard() {
           Conversations are private &amp; encrypted
         </p>
       </div>
+
+      {/* --- PILOT UPDATES BANNER --- */}
+      <PilotUpdateBanner />
 
       {/* --- FEEDBACK FORM --- */}
       <AnimatePresence>
