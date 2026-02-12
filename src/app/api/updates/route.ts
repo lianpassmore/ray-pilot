@@ -24,7 +24,8 @@ export async function GET() {
 
     // Parse update blocks — each is a <div class="glass-panel ... border-l-4 ...">
     const updates: PilotUpdate[] = []
-    const blockRegex = /<div class="glass-panel p-5 rounded-sm border-l-4 border-(clay|forest-green)">([\s\S]*?)<\/div>\s*(?=<div class="glass-panel|<\/section>|<nav)/g
+    // Match each update block — accounts for HTML comments between blocks
+    const blockRegex = /<div class="glass-panel p-5 rounded-sm border-l-4 border-(clay|forest-green)">([\s\S]*?)<\/div>\s*(?=<!--[\s\S]*?-->|<div class="glass-panel|<\/section>|<nav)/g
 
     let match
     while ((match = blockRegex.exec(html)) !== null) {
