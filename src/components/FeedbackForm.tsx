@@ -55,27 +55,35 @@ export default function FeedbackForm({ conversationDbId, userId, onComplete }: F
   });
 
   const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState('');
   const [step, setStep] = useState<'ratings' | 'openended'>('ratings');
 
   const handleSubmit = async () => {
     setSubmitting(true);
+    setError('');
     try {
       const supabase = createClient();
       const { data: { session } } = await supabase.auth.getSession();
-      await fetch('/api/feedback', {
+      const res = await fetch('/api/feedback', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session?.access_token}` },
         body: JSON.stringify({
           conversation_id: conversationDbId,
           user_id: userId,
-          feedback_type: 'session',
+          feedback_type: 'end_of_session',
           ...ratings,
           ...openEnded,
         }),
       });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        setError(data.error || 'Failed to submit feedback. Please try again.');
+        return;
+      }
       onComplete();
     } catch (err) {
       console.error('Failed to submit feedback:', err);
+      setError('Something went wrong. Please try again.');
     } finally {
       setSubmitting(false);
     }
@@ -182,6 +190,10 @@ export default function FeedbackForm({ conversationDbId, userId, onComplete }: F
                   className="input-field min-h-[80px] resize-none"
                 />
               </div>
+
+              {error && (
+                <p className="text-destructive text-sm text-center">{error}</p>
+              )}
 
               <button
                 onClick={handleSubmit}

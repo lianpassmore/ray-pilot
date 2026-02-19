@@ -1,7 +1,7 @@
 'use client'
 import { useState, useEffect, useCallback } from 'react'
 import { createClient } from '@/lib/supabase'
-import { X, Phone, LogOut, User } from 'lucide-react'
+import { X, Phone, LogOut, User, ClipboardList } from 'lucide-react'
 import RayWidget from '@/components/RayWidget'
 import FeedbackForm from '@/components/FeedbackForm'
 import HeaderIcons from '@/components/HeaderIcons'
@@ -185,6 +185,17 @@ export default function Dashboard() {
                 <div>
                   <p className="text-xs font-bold uppercase tracking-widest text-charcoal">Help Ray know you</p>
                   <p className="text-[11px] text-warm-grey mt-0.5">Share context so Ray can get into it faster</p>
+                </div>
+              </button>
+
+              <button
+                onClick={() => { setIsMenuOpen(false); router.push('/final-review') }}
+                className="w-full flex items-center gap-3 p-3 rounded-sm bg-clay/5 border border-clay/20 hover:border-clay/40 transition-all text-left group"
+              >
+                <ClipboardList size={16} strokeWidth={1.5} className="text-clay shrink-0" />
+                <div>
+                  <p className="text-xs font-bold uppercase tracking-widest text-charcoal">Final Review</p>
+                  <p className="text-[11px] text-warm-grey mt-0.5">Complete your final feedback to receive your koha</p>
                 </div>
               </button>
 

@@ -3,9 +3,10 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { useConversation } from '@elevenlabs/react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Mic, MicOff, PhoneOff, Send, MessageSquare, X } from 'lucide-react';
+import { Mic, MicOff, PhoneOff, Send, MessageSquare, X, ClipboardList } from 'lucide-react';
 import AnimatedRayCircle from './AnimatedRayCircle';
 import { createClient } from '@/lib/supabase';
+import { useRouter } from 'next/navigation';
 
 interface ProfileData {
   relationship_status?: string | null;
@@ -43,6 +44,7 @@ export default function RayWidget({ userName, userId, profile, onSessionEnd }: R
   const [textInput, setTextInput] = useState('');
   const conversationDbIdRef = useRef<string | null>(null);
   const supabase = createClient();
+  const router = useRouter();
 
   const [messages, setMessages] = useState<Array<{ role: 'user' | 'agent'; content: string }>>([]);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -233,8 +235,8 @@ export default function RayWidget({ userName, userId, profile, onSessionEnd }: R
               </p>
             </div>
 
-            {/* "Prefer to type?" — idle only */}
-            {isIdle && (
+            {/* "Prefer to type?" — idle only, no error */}
+            {isIdle && !error && (
               <motion.button
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
@@ -244,6 +246,27 @@ export default function RayWidget({ userName, userId, profile, onSessionEnd }: R
               >
                 Prefer to type?
               </motion.button>
+            )}
+
+            {/* Final review CTA — when Ray is unavailable */}
+            {isIdle && error && (
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.3, duration: 0.5 }}
+                className="mt-8 text-center space-y-4 max-w-xs"
+              >
+                <p className="text-sm text-charcoal/70 leading-relaxed">
+                  Ray&apos;s pilot sessions have ended. You can still complete your final review to receive your koha.
+                </p>
+                <button
+                  onClick={() => router.push('/final-review')}
+                  className="btn-primary inline-flex items-center justify-center gap-2"
+                >
+                  <ClipboardList size={16} strokeWidth={1.5} />
+                  Complete Final Review
+                </button>
+              </motion.div>
             )}
 
             {/* Active Voice Controls */}
