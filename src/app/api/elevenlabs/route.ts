@@ -115,17 +115,10 @@ export async function GET(request: Request) {
     }
 
     // Determine session type and compute days since last session
-    const FINAL_REVIEW_DATE = new Date('2026-02-26T00:00:00+13:00');
     const now = new Date();
-    let sessionType = 'returning';
+    const sessionType = 'final_review';
     let daysSinceLastSession: number | null = null;
     let lastSessionDate: string | null = null;
-
-    if (sessionNumber === 1) {
-      sessionType = 'first_time';
-    } else if (now >= FINAL_REVIEW_DATE) {
-      sessionType = 'final_review';
-    }
 
     if (userId && sessionNumber > 1) {
       // Get last completed session
@@ -143,15 +136,6 @@ export async function GET(request: Request) {
         lastSessionDate = lastDate.toISOString();
         daysSinceLastSession = Math.floor((now.getTime() - lastDate.getTime()) / (1000 * 60 * 60 * 24));
 
-        const nzFormatter = new Intl.DateTimeFormat('en-NZ', { timeZone: 'Pacific/Auckland', year: 'numeric', month: '2-digit', day: '2-digit' });
-        const lastDateNZ = nzFormatter.format(lastDate);
-        const nowNZ = nzFormatter.format(now);
-        if (
-          sessionType === 'returning' &&
-          lastDateNZ === nowNZ
-        ) {
-          sessionType = 'returning_same_day';
-        }
       }
     }
 
