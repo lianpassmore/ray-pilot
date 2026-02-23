@@ -24,7 +24,7 @@ export default function Login() {
     const { data: profile } = await supabase.from('profiles').select('display_name, consent_agreed, phone').eq('id', user.id).single()
     if (!profile || !profile.consent_agreed) router.push('/onboarding/consent')
     else if (!profile.display_name) router.push('/onboarding/profile')
-    else router.push('/dashboard')
+    else router.push('/final-review')
   }
 
   const handleGoogleLogin = async () => {
