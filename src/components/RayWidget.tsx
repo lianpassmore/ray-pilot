@@ -3,10 +3,9 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { useConversation } from '@elevenlabs/react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Mic, MicOff, PhoneOff, Send, MessageSquare, X, ClipboardList } from 'lucide-react';
+import { Mic, MicOff, PhoneOff, Send, MessageSquare, X } from 'lucide-react';
 import AnimatedRayCircle from './AnimatedRayCircle';
 import { createClient } from '@/lib/supabase';
-import { useRouter } from 'next/navigation';
 
 interface ProfileData {
   relationship_status?: string | null;
@@ -39,12 +38,10 @@ function buildUserContext(profile?: ProfileData): string {
 export default function RayWidget({ userName, userId, profile, onSessionEnd }: RayWidgetProps) {
   const [error, setError] = useState<string | null>(null);
   const [mode, setMode] = useState<'voice' | 'text'>('voice');
-  const [isMuted, setIsMuted] = useState(false);
   const [micMuted, setMicMuted] = useState(false);
   const [textInput, setTextInput] = useState('');
   const conversationDbIdRef = useRef<string | null>(null);
   const supabase = createClient();
-  const router = useRouter();
 
   const [messages, setMessages] = useState<Array<{ role: 'user' | 'agent'; content: string }>>([]);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -117,12 +114,10 @@ export default function RayWidget({ userName, userId, profile, onSessionEnd }: R
 
       if (startMode === 'text') {
         conversation.setVolume({ volume: 0 });
-        setIsMuted(true);
-        setMicMuted(true);
+                setMicMuted(true);
       } else {
         conversation.setVolume({ volume: 1 });
-        setIsMuted(false);
-        setMicMuted(false);
+                setMicMuted(false);
       }
 
       setTimeout(async () => {
@@ -235,8 +230,8 @@ export default function RayWidget({ userName, userId, profile, onSessionEnd }: R
               </p>
             </div>
 
-            {/* "Prefer to type?" — idle only, no error */}
-            {isIdle && !error && (
+            {/* "Prefer to type?" — idle only */}
+            {isIdle && (
               <motion.button
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
@@ -246,27 +241,6 @@ export default function RayWidget({ userName, userId, profile, onSessionEnd }: R
               >
                 Prefer to type?
               </motion.button>
-            )}
-
-            {/* Final review CTA — when Ray is unavailable */}
-            {isIdle && error && (
-              <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.3, duration: 0.5 }}
-                className="mt-8 text-center space-y-4 max-w-xs"
-              >
-                <p className="text-sm text-charcoal/70 leading-relaxed">
-                  Ray&apos;s pilot sessions have ended. You can still complete your final review to receive your koha.
-                </p>
-                <button
-                  onClick={() => router.push('/final-review')}
-                  className="btn-primary inline-flex items-center justify-center gap-2"
-                >
-                  <ClipboardList size={16} strokeWidth={1.5} />
-                  Complete Final Review
-                </button>
-              </motion.div>
             )}
 
             {/* Active Voice Controls */}
@@ -280,8 +254,7 @@ export default function RayWidget({ userName, userId, profile, onSessionEnd }: R
                   onClick={() => {
                     setMode('text');
                     conversation.setVolume({ volume: 0 });
-                    setIsMuted(true);
-                    setMicMuted(true);
+                                        setMicMuted(true);
                   }}
                   className="p-3 rounded-full bg-transparent border border-charcoal/15 text-charcoal/60 hover:text-charcoal hover:border-charcoal/30 transition-all"
                   title="Switch to Text"
@@ -335,8 +308,7 @@ export default function RayWidget({ userName, userId, profile, onSessionEnd }: R
                   onClick={() => {
                     setMode('voice');
                     conversation.setVolume({ volume: 1 });
-                    setIsMuted(false);
-                    setMicMuted(false);
+                                        setMicMuted(false);
                   }}
                   className="p-2 text-charcoal/50 hover:text-charcoal rounded-sm transition-colors"
                   title="Switch to Voice"
