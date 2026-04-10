@@ -42,7 +42,6 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "type": "commonjs",
   "bugs": {
     "url": "https://github.com/lianpassmore/ray-pilot/issues"
   },
