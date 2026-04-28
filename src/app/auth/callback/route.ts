@@ -28,6 +28,6 @@ export async function GET(request: Request) {
     }
   }
 
-  // Redirect to final review (pilot credits exhausted)
-  return NextResponse.redirect(new URL('/final-review', requestUrl.origin))
+  // Redirect to dashboard if profile is complete
+  return NextResponse.redirect(new URL('/dashboard', requestUrl.origin))
 }

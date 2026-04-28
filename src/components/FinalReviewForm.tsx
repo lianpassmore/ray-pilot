@@ -294,7 +294,7 @@ export default function FinalReviewForm({ userId, onComplete }: FinalReviewFormP
             Your koha credits will be processed shortly.
           </p>
           <button onClick={onComplete} className="btn-primary mt-8">
-            Sign Out
+            Back to Dashboard
           </button>
         </motion.div>
       </div>

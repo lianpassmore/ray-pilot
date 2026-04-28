@@ -64,10 +64,10 @@ export default function FinalReviewPage() {
               Update My Responses
             </button>
             <button
-              onClick={async () => { await supabase.auth.signOut(); router.push('/login'); }}
+              onClick={() => router.push('/dashboard')}
               className="btn-secondary"
             >
-              Sign Out
+              Back to Dashboard
             </button>
           </div>
         </div>
@@ -78,7 +78,7 @@ export default function FinalReviewPage() {
   return (
     <FinalReviewForm
       userId={userId}
-      onComplete={async () => { await supabase.auth.signOut(); router.push('/login'); }}
+      onComplete={() => router.push('/dashboard')}
     />
   );
 }
